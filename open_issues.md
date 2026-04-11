@@ -8,9 +8,9 @@ Issues that may need attention. Review with user before resolving.
 
 2. ~~**Database URL**~~ — DONE: Verified correct (`https://challengedice-default-rtdb.firebaseio.com`).
 
-3. ~~**App Check**~~ — DONE: Firebase App Check enabled with reCAPTCHA Enterprise. Debug token support for local dev. Enforcement enabled on Realtime Database in Firebase Console.
+3. ~~**App Check**~~ — DONE: Firebase App Check enabled with reCAPTCHA v3. Debug token support for local dev. Enforcement enabled on Realtime Database in Firebase Console.
 
-4. **API key restrictions** — Consider adding HTTP referrer restrictions in Google Cloud Console to limit the API key to the GitHub Pages domain and `localhost`.
+4. ~~**API key restrictions**~~ — Investigated; HTTP referrer restrictions conflict with App Check token exchange. Removed. App Check + database rules provide sufficient protection.
 
 ## Online Multiplayer
 
@@ -36,6 +36,18 @@ Issues that may need attention. Review with user before resolving.
 
 18. ~~**Scorecard dark mode colors**~~ — FIXED: Added dedicated scorecard CSS variables (`--sc-header-bg`, `--sc-border`, `--sc-penalty-bg`, `--sc-scoring-bg`, `--sc-filled-bg`, etc.) with dark mode variants in `app.css`. Spacer boxes now use `--sc-header-bg` to match Android's unavailable square shading.
 
+19. ~~**Main menu layout**~~ — FIXED: Replaced tertiary buttons with 2x2 grid of text-style nav links (Settings, Stats, Rules, About) matching Android layout. Removed title text.
+
+20. ~~**Player setup improvements**~~ — FIXED: All colors always visible (taken ones dimmed), circular swatches, responsive 2x2 grid on desktop, unique random AI names, difficulty selector inline with AI checkbox.
+
+21. ~~**Open Games always visible**~~ — FIXED: Open Games section on online setup page now always shows with empty state and refresh button, matching Android's "Find Open Game" pattern.
+
+22. ~~**Dark mode button readability**~~ — FIXED: All `background: var(--gold-amber); color: white` buttons replaced with `var(--btn-primary-bg)` / `var(--btn-primary-text)` which stays readable in both modes. Affected: online setup, lobby, game, gameover, local setup, gameover pages.
+
+23. ~~**Game top bar dark mode**~~ — FIXED: Top bar background and text hardcoded to always-dark scheme (`#1A0D04` bg, `#F0E8D8` text) so it works in both light and dark mode. Fixed on both local and online game pages.
+
+24. ~~**Active player tab dark mode**~~ — FIXED: Active player tab uses `color-mix` to blend player color with dark card background in dark mode instead of full pastel highlight.
+
 ## Data Parity
 
 11. **AI randomness** — The AI `pickRandom` and `pickNearOptimal` functions use `Math.random()` rather than crypto-secure randomness. This is fine for gameplay but differs from the Android implementation which uses `kotlin.collections.random()` (also not crypto-secure). Not a parity issue.
@@ -46,6 +58,6 @@ Issues that may need attention. Review with user before resolving.
 
 14. **Host badge hardcoded to index 0** — Lobby page (`online/lobby/[gameId]`) shows "Host" badge for `i === 0` (first player in list), not the actual host UID. After host transfer this would be wrong. Should check against `onlineGame.isHost` or compare UIDs.
 
-15. **Settings page missing** — The Android app has a Settings screen (layout mode, auto-roll toggle, haptic toggle, sound toggle, combo size, combo sort mode, dice animation toggle, dice roll direction). The web version has no settings page — auto-roll is always on, sounds use Web Audio API placeholders, and there are no layout/animation options. Need to create a `/settings` route.
+15. **Settings page missing** — The Android app has a Settings screen (layout mode, auto-roll toggle, haptic toggle, sound toggle, combo size, combo sort mode, dice animation toggle, dice roll direction). The web version has a `/settings` route but limited options. Auto-roll is always on, sounds use Web Audio API placeholders.
 
 16. **`gameType.replace('_', ' ')` only replaces first underscore** — Stats page line 94. Use `.replaceAll('_', ' ')` for future-proofing if game types with multiple underscores are added.

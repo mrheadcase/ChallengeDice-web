@@ -187,7 +187,7 @@
 
 	.top-bar {
 		display: flex; align-items: center; justify-content: space-between;
-		padding: 8px 16px; background: var(--brown); color: var(--text-light);
+		padding: 8px 16px; background: #1A0D04; color: #F0E8D8;
 		gap: 8px; flex-wrap: wrap;
 	}
 	.top-bar-right { display: flex; gap: 4px; align-items: center; }
@@ -195,7 +195,7 @@
 		color: var(--light-gold); font-weight: 600; font-size: var(--font-size-sm);
 		padding: 6px 12px; border-radius: var(--radius-md);
 	}
-	.round-label { font-weight: 700; }
+	.round-label { font-weight: 700; color: inherit; }
 	.disconnected-info {
 		font-size: var(--font-size-xs); color: #FFA726; font-style: italic;
 	}
@@ -210,7 +210,7 @@
 	.roll-prompt p, .waiting-prompt p { color: var(--text-medium); margin-bottom: 12px; font-weight: 600; }
 
 	.roll-btn {
-		background: var(--gold-amber); color: white; padding: 14px 40px;
+		background: var(--btn-primary-bg); color: var(--btn-primary-text); padding: 14px 40px;
 		border-radius: var(--radius-lg); font-weight: 700; font-size: var(--font-size-lg);
 	}
 	.roll-btn:disabled { opacity: 0.6; cursor: not-allowed; }

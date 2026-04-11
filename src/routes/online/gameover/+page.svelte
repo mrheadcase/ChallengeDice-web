@@ -192,7 +192,7 @@
 	.action-btn {
 		flex: 1; padding: 12px; border-radius: var(--radius-lg); font-weight: 700;
 	}
-	.action-btn.primary { background: var(--gold-amber); color: white; }
+	.action-btn.primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
 	.action-btn.secondary { background: var(--card-bg); border: 2px solid var(--warm-tan); color: var(--text-medium); }
 	.action-btn:disabled { opacity: 0.6; }
 

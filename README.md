@@ -43,7 +43,7 @@ All Firebase operations are ported from the Android `FirebaseGameManager.kt`:
 - Simultaneous scoring (all players score independently, host advances rounds)
 - Disconnect detection and self-healing reconnect
 - Rematch system (request/accept/decline)
-- Firebase App Check with reCAPTCHA Enterprise (attestation for web client)
+- Firebase App Check with reCAPTCHA v3 (attestation for web client)
 
 Game creation and lobby tested successfully. Full gameplay flow needs further testing.
 
@@ -78,7 +78,7 @@ src/
 │   │   ├── constants.ts       # Row configs, multipliers, colors, theme
 │   │   └── ai.ts              # AI strategies (Easy/Medium/Hard/Expert)
 │   ├── firebase/
-│   │   ├── config.ts          # Firebase app init (NEEDS REAL appId)
+│   │   ├── config.ts          # Firebase app init + App Check
 │   │   ├── auth.ts            # Anonymous auth
 │   │   ├── gameManager.ts     # All Firebase CRUD operations
 │   │   └── types.ts           # Online data types
@@ -149,9 +149,9 @@ The web app is registered in the Firebase `challengedice` project. Firebase conf
 
 ### App Check
 
-Firebase App Check is enabled with reCAPTCHA Enterprise to ensure only the registered web app can access the Realtime Database. Enforcement is turned on in the Firebase Console.
+Firebase App Check is enabled with reCAPTCHA v3 to ensure only the registered web app can access the Realtime Database. Enforcement is turned on in the Firebase Console.
 
-- **Production:** reCAPTCHA Enterprise runs invisibly (no user-facing challenge)
+- **Production:** reCAPTCHA v3 runs invisibly (no user-facing challenge)
 - **Local dev:** A debug token is used automatically (`import.meta.env.DEV` guard in `config.ts`). On first run, copy the debug token from the browser console and register it in Firebase Console → App Check → Manage debug tokens
 - The Android app also has App Check enabled, so enforcement applies to both platforms
 

@@ -198,9 +198,9 @@
 	{/if}
 
 	<!-- Open lobbies -->
-	{#if openLobbies.length > 0}
-		<div class="section">
-			<h3>Open Games</h3>
+	<div class="section">
+		<h3>Open Games</h3>
+		{#if openLobbies.length > 0}
 			{#each openLobbies as lobby}
 				<div class="game-card">
 					<div class="game-info">
@@ -210,10 +210,11 @@
 					<button class="small-btn primary" onclick={() => joinLobby(lobby)}>Join</button>
 				</div>
 			{/each}
-		</div>
-	{/if}
-
-	<button class="refresh-btn" onclick={loadLobbiesAndGames}>Refresh</button>
+		{:else}
+			<p class="empty-text">No open games found</p>
+		{/if}
+		<button class="refresh-btn" onclick={loadLobbiesAndGames}>Refresh</button>
+	</div>
 </div>
 
 <style>
@@ -263,7 +264,7 @@
 		padding: 12px 24px; border-radius: var(--radius-lg); font-weight: 700;
 		font-size: var(--font-size-base); width: 100%;
 	}
-	.action-btn.primary { background: var(--gold-amber); color: white; }
+	.action-btn.primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
 	.action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 	.join-row { display: flex; gap: 8px; }
@@ -290,11 +291,16 @@
 		padding: 6px 14px; border-radius: var(--radius-md); font-weight: 600;
 		font-size: var(--font-size-sm);
 	}
-	.small-btn.primary { background: var(--gold-amber); color: white; }
+	.small-btn.primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
 	.small-btn.danger { background: var(--score-negative); color: white; }
+
+	.empty-text {
+		color: var(--text-muted); font-size: var(--font-size-sm);
+		font-style: italic; padding: 8px 0;
+	}
 
 	.refresh-btn {
 		padding: 10px; color: var(--gold-amber); font-weight: 600;
-		text-align: center; font-size: var(--font-size-sm);
+		text-align: center; font-size: var(--font-size-sm); width: 100%;
 	}
 </style>

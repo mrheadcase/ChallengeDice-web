@@ -211,7 +211,7 @@
 		font-size: var(--font-size-base);
 	}
 
-	.action-btn.primary { background: var(--gold-amber); color: white; }
+	.action-btn.primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
 	.action-btn.secondary { background: var(--card-bg); border: 2px solid var(--gold-amber); color: var(--gold-amber); }
 	.action-btn.tertiary { background: var(--card-bg); border: 2px solid var(--warm-tan); color: var(--text-medium); }
 </style>

@@ -73,6 +73,10 @@
 		background: var(--tab-light);
 	}
 
+	:global(.theme-dark) .player-tab.active {
+		background: color-mix(in srgb, var(--tab-color) 25%, var(--card-bg));
+	}
+
 	.player-tab.eliminated {
 		opacity: 0.5;
 	}

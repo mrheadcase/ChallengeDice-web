@@ -214,8 +214,8 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 8px 16px;
-		background: var(--brown);
-		color: var(--text-light);
+		background: #1A0D04;
+		color: #F0E8D8;
 	}
 
 	.top-bar-right {
@@ -237,6 +237,7 @@
 
 	.round-label {
 		font-weight: 700;
+		color: inherit;
 	}
 
 	.game-content {

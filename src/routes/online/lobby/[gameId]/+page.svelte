@@ -155,7 +155,7 @@
 		color: var(--gold-amber); font-family: monospace;
 	}
 	.copy-btn {
-		padding: 8px 16px; background: var(--gold-amber); color: white;
+		padding: 8px 16px; background: var(--btn-primary-bg); color: var(--btn-primary-text);
 		border-radius: var(--radius-md); font-weight: 600; font-size: var(--font-size-sm);
 	}
 	.code-hint { font-size: var(--font-size-sm); color: var(--text-muted); }
@@ -173,7 +173,7 @@
 	.player-dot { width: 12px; height: 12px; border-radius: 50%; }
 	.player-name { font-weight: 600; flex: 1; }
 	.host-badge {
-		font-size: 10px; background: var(--gold-amber); color: white;
+		font-size: 10px; background: var(--btn-primary-bg); color: var(--btn-primary-text);
 		padding: 2px 8px; border-radius: 10px; font-weight: 700;
 	}
 	.waiting { color: var(--text-muted); font-style: italic; }
@@ -183,7 +183,7 @@
 		padding: 16px; border-radius: var(--radius-lg); font-weight: 700;
 		font-size: var(--font-size-lg); width: 100%;
 	}
-	.action-btn.primary { background: var(--gold-amber); color: white; }
+	.action-btn.primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
 	.action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 	.waiting-msg {
