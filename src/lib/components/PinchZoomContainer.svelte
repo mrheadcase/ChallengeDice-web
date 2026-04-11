@@ -138,7 +138,7 @@
 
 <style>
 	.pinch-zoom-container {
-		overflow: hidden;
+		overflow: auto;
 		touch-action: pan-x pan-y;
 		width: 100%;
 		height: 100%;

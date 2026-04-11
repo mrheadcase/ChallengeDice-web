@@ -159,7 +159,6 @@
 			{/if}
 
 			{#if state.phase === 'SELECTING' && !localGame.isCurrentPlayerAI()}
-				<p class="status-text center-block">{currentPlayer?.name} — choose a combination:</p>
 				<CombinationGrid
 					combinations={state.combinations}
 					validCombinations={state.validCombinations}
@@ -254,6 +253,7 @@
 		gap: 8px;
 		overflow-y: auto;
 		flex: 1;
+		min-height: 0;
 	}
 
 	.center-block {
@@ -281,14 +281,14 @@
 	.roll-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 	.score-btn {
-		background: var(--gold-amber);
-		color: white;
-		padding: 14px 48px;
-		border-radius: var(--radius-lg);
+		background: var(--btn-primary-bg);
+		color: var(--btn-primary-text);
+		padding: 10px 24px;
+		border-radius: var(--radius-md);
 		font-weight: 700;
-		font-size: var(--font-size-lg);
-		box-shadow: 0 4px 12px rgba(196, 122, 16, 0.3);
-		margin-top: 8px;
+		font-size: var(--font-size-base);
+		box-shadow: 0 2px 8px rgba(196, 122, 16, 0.3);
+		margin-top: 4px;
 	}
 	.score-btn:hover:not(:disabled) { background: var(--mid-brown); }
 	.score-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -297,6 +297,7 @@
 		flex: 1;
 		overflow: auto;
 		padding: 8px;
+		min-height: 0;
 	}
 
 	@media (min-width: 1024px) {

@@ -20,10 +20,10 @@
 	}: Props = $props();
 
 	const SIZE_MAP: Record<ComboSize, string> = {
-		small: 'minmax(70px, 1fr)',
-		medium: 'minmax(85px, 1fr)',
-		large: 'minmax(100px, 1fr)',
-		extra_large: 'minmax(130px, 1fr)',
+		small: 'minmax(75px, 1fr)',
+		medium: 'minmax(90px, 1fr)',
+		large: 'minmax(105px, 1fr)',
+		extra_large: 'minmax(135px, 1fr)',
 	};
 
 	let prefs = $derived(preferences.current);
@@ -67,7 +67,7 @@
 	}
 </script>
 
-<div class="combo-grid" style="grid-template-columns: repeat(auto-fill, {SIZE_MAP[prefs.comboSize]})">
+<div class="combo-grid">
 	{#each sortedCombinations as combo}
 		<CombinationCard
 			combination={combo}
@@ -81,12 +81,14 @@
 
 <style>
 	.combo-grid {
-		display: grid;
+		display: flex;
+		flex-wrap: wrap;
 		gap: 8px;
 		padding: 8px;
 		overflow-y: auto;
 		max-height: 240px;
 		width: 100%;
+		justify-content: center;
 	}
 
 	@media (min-width: 768px) {

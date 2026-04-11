@@ -48,6 +48,8 @@ Issues that may need attention. Review with user before resolving.
 
 24. ~~**Active player tab dark mode**~~ — FIXED: Active player tab uses `color-mix` to blend player color with dark card background in dark mode instead of full pastel highlight.
 
+25. ~~**Game page mobile layout**~~ — FIXED: Combo selections and scorecard scroll independently on mobile. Removed "choose a combination" text. Reduced Score It button size. Combo cards are now content-responsive with flexible wrapping (like Android). PinchZoomContainer allows scrolling.
+
 ## Data Parity
 
 11. **AI randomness** — The AI `pickRandom` and `pickNearOptimal` functions use `Math.random()` rather than crypto-secure randomness. This is fine for gameplay but differs from the Android implementation which uses `kotlin.collections.random()` (also not crypto-secure). Not a parity issue.

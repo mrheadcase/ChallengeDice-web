@@ -57,7 +57,7 @@
 		background: var(--card-bg);
 		cursor: pointer;
 		transition: all var(--transition-fast);
-		min-width: 80px;
+		min-width: fit-content;
 	}
 
 	.combo-card:hover:not(:disabled) {
