@@ -268,11 +268,12 @@
 
 	.join-row { display: flex; gap: 8px; }
 	.code-input {
-		flex: 1; padding: 10px 12px; border: 1px solid var(--warm-tan);
+		flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--warm-tan);
 		border-radius: var(--radius-md); font-size: var(--font-size-lg); font-weight: 700;
 		letter-spacing: 4px; text-align: center;
+		background: var(--input-bg); color: var(--text-dark);
 	}
-	.join-row .action-btn { width: auto; }
+	.join-row .action-btn { width: auto; flex-shrink: 0; }
 
 	.game-card {
 		display: flex; align-items: center; justify-content: space-between;

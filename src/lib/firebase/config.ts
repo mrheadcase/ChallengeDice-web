@@ -1,6 +1,6 @@
 // Firebase configuration — same project as the Android app
 import { initializeApp } from 'firebase/app';
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getDatabase } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 
@@ -22,7 +22,7 @@ if (import.meta.env.DEV) {
 }
 
 const appCheck = initializeAppCheck(app, {
-	provider: new ReCaptchaEnterpriseProvider('6Le4pLEsAAAAAGoYuJW8qref1I3czf9K7Y1L03XN'),
+	provider: new ReCaptchaV3Provider('6Le4pLEsAAAAAGoYuJW8qref1I3czf9K7Y1L03XN'),
 	isTokenAutoRefreshEnabled: true,
 });
 
