@@ -34,31 +34,76 @@
 		} catch { /* ignore */ }
 	});
 
+	function usedAiNames(): Set<string> {
+		return new Set(players.filter(p => p.isAI && p.name).map(p => p.name));
+	}
+
+	function pickRandomAiName(difficulty: AiDifficulty): string {
+		const names = AI_BOT_NAMES[difficulty] ?? AI_BOT_NAMES.MEDIUM;
+		const used = usedAiNames();
+		const available = names.filter(n => !used.has(n));
+		const pool = available.length > 0 ? available : names;
+		return pool[Math.floor(Math.random() * pool.length)];
+	}
+
 	function createDefaultPlayers(count: number): PlayerConfig[] {
-		return Array.from({ length: count }, (_, i) => ({
-			name: i === 0 ? '' : '',
-			color: PLAYER_COLOR_DEFAULTS[i],
-			isAI: i > 0,
-			aiDifficulty: 'MEDIUM' as AiDifficulty,
-		}));
+		const result: PlayerConfig[] = [];
+		for (let i = 0; i < count; i++) {
+			const isAI = i > 0;
+			const difficulty: AiDifficulty = 'MEDIUM';
+			result.push({
+				name: isAI ? pickAiNameForNewPlayer(difficulty, result) : '',
+				color: PLAYER_COLOR_DEFAULTS[i],
+				isAI,
+				aiDifficulty: difficulty,
+			});
+		}
+		return result;
+	}
+
+	function pickAiNameForNewPlayer(difficulty: AiDifficulty, existing: PlayerConfig[]): string {
+		const names = AI_BOT_NAMES[difficulty] ?? AI_BOT_NAMES.MEDIUM;
+		const used = new Set(existing.filter(p => p.isAI && p.name).map(p => p.name));
+		const available = names.filter(n => !used.has(n));
+		const pool = available.length > 0 ? available : names;
+		return pool[Math.floor(Math.random() * pool.length)];
 	}
 
 	function updateCount(count: number) {
 		playerCount = count;
-		const newPlayers = createDefaultPlayers(count);
-		// Preserve existing config where possible
-		for (let i = 0; i < Math.min(players.length, count); i++) {
-			newPlayers[i] = { ...players[i] };
+		if (count <= players.length) {
+			players = players.slice(0, count);
+		} else {
+			const newPlayers = [...players];
+			for (let i = players.length; i < count; i++) {
+				const difficulty: AiDifficulty = 'MEDIUM';
+				newPlayers.push({
+					name: pickAiNameForNewPlayer(difficulty, newPlayers),
+					color: PLAYER_COLOR_DEFAULTS[i],
+					isAI: true,
+					aiDifficulty: difficulty,
+				});
+			}
+			players = newPlayers;
 		}
-		players = newPlayers;
 	}
 
-	function getDefaultName(i: number, config: PlayerConfig): string {
-		if (config.isAI) {
-			const names = AI_BOT_NAMES[config.aiDifficulty] ?? AI_BOT_NAMES.MEDIUM;
-			return names[i % names.length];
+	function onDifficultyChange(index: number, difficulty: AiDifficulty) {
+		players[index].aiDifficulty = difficulty;
+		players[index].name = pickRandomAiName(difficulty);
+	}
+
+	function onAiToggle(index: number, isAI: boolean) {
+		players[index].isAI = isAI;
+		if (isAI) {
+			players[index].name = pickRandomAiName(players[index].aiDifficulty);
+		} else {
+			players[index].name = '';
 		}
-		return `Player ${i + 1}`;
+	}
+
+	function getPlaceholder(i: number, config: PlayerConfig): string {
+		return config.isAI ? '' : `Player ${i + 1}`;
 	}
 
 	function usedColors(): Set<PlayerColor> {
@@ -77,7 +122,7 @@
 		} catch { /* ignore */ }
 
 		const setups: PlayerSetup[] = players.map((p, i) => ({
-			name: sanitizeName(p.name.trim() || getDefaultName(i, p)),
+			name: sanitizeName(p.name.trim() || `Player ${i + 1}`),
 			color: p.color,
 			isAI: p.isAI,
 			aiDifficulty: p.aiDifficulty,
@@ -117,7 +162,7 @@
 					<input
 						type="text"
 						class="name-input"
-						placeholder={getDefaultName(i, player)}
+						placeholder={getPlaceholder(i, player)}
 						bind:value={player.name}
 						maxlength="20"
 					/>
@@ -127,13 +172,16 @@
 					<div class="option-row">
 						<span class="option-label">Color:</span>
 						<div class="color-picker">
-							{#each availableColors(i) as color}
+							{#each PLAYER_COLOR_DEFAULTS as color}
 								{@const cs = PLAYER_COLORS[color]}
+								{@const taken = color !== player.color && usedColors().has(color)}
 								<button
 									class="color-swatch"
 									class:selected={player.color === color}
+									class:taken
 									style:background={cs.primary}
-									onclick={() => { player.color = color; }}
+									onclick={() => { if (!taken) player.color = color; }}
+									disabled={taken}
 									aria-label={color}
 								></button>
 							{/each}
@@ -143,21 +191,17 @@
 					{#if i > 0 || playerCount > 1}
 						<div class="option-row">
 							<label class="ai-toggle">
-								<input type="checkbox" bind:checked={player.isAI} />
+								<input type="checkbox" checked={player.isAI} onchange={(e) => onAiToggle(i, e.currentTarget.checked)} />
 								<span>AI Player</span>
 							</label>
-						</div>
-					{/if}
-
-					{#if player.isAI}
-						<div class="option-row">
-							<span class="option-label">Difficulty:</span>
-							<select bind:value={player.aiDifficulty} class="difficulty-select">
-								<option value="EASY">Easy</option>
-								<option value="MEDIUM">Medium</option>
-								<option value="HARD">Hard</option>
-								<option value="EXPERT">Expert</option>
-							</select>
+							{#if player.isAI}
+								<select value={player.aiDifficulty} onchange={(e) => onDifficultyChange(i, e.currentTarget.value as AiDifficulty)} class="difficulty-select">
+									<option value="EASY">Easy</option>
+									<option value="MEDIUM">Medium</option>
+									<option value="HARD">Hard</option>
+									<option value="EXPERT">Expert</option>
+								</select>
+							{/if}
 						</div>
 					{/if}
 				</div>
@@ -231,7 +275,13 @@
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
-		flex: 1;
+	}
+
+	@media (min-width: 768px) {
+		.players-list {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+		}
 	}
 
 	.player-card {
@@ -300,6 +350,8 @@
 	.color-swatch {
 		width: 32px;
 		height: 32px;
+		min-width: 32px;
+		min-height: 32px;
 		border-radius: 50%;
 		border: 3px solid transparent;
 		transition: all var(--transition-fast);
@@ -308,6 +360,11 @@
 	.color-swatch.selected {
 		border-color: var(--text-dark);
 		box-shadow: 0 0 0 2px white inset;
+	}
+
+	.color-swatch.taken {
+		opacity: 0.3;
+		cursor: not-allowed;
 	}
 
 	.ai-toggle {
@@ -335,8 +392,8 @@
 	}
 
 	.start-btn {
-		background: var(--gold-amber);
-		color: white;
+		background: var(--btn-primary-bg);
+		color: var(--btn-primary-text);
 		padding: 16px;
 		border-radius: var(--radius-lg);
 		font-weight: 700;
@@ -345,5 +402,5 @@
 		margin-top: auto;
 	}
 
-	.start-btn:hover { background: var(--mid-brown); }
+	.start-btn:hover { background: #A86400; }
 </style>

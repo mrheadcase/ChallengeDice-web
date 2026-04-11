@@ -16,7 +16,7 @@
 
 	<div class="menu-content">
 		<div class="logo-section">
-			<h1 class="title">Challenge<br/>Dice</h1>
+			<div class="title-spacer"></div>
 			<img
 				src="{base}/dice_icon.png"
 				alt="Five colored dice"
@@ -36,20 +36,14 @@
 			<button class="menu-btn secondary" onclick={() => goto(`${base}/online`)}>
 				Online Game
 			</button>
-			<button class="menu-btn tertiary" onclick={() => goto(`${base}/rules`)}>
-				Rules
-			</button>
-			<button class="menu-btn tertiary" onclick={() => goto(`${base}/stats`)}>
-				Stats & History
-			</button>
-			<button class="menu-btn tertiary" onclick={() => goto(`${base}/settings`)}>
-				Settings
-			</button>
 		</nav>
 
-		<footer class="menu-footer">
-			<button class="about-link" onclick={() => goto(`${base}/about`)}>About</button>
-		</footer>
+		<div class="nav-grid">
+			<button class="nav-link" onclick={() => goto(`${base}/settings`)}>Settings</button>
+			<button class="nav-link" onclick={() => goto(`${base}/stats`)}>Stats</button>
+			<button class="nav-link" onclick={() => goto(`${base}/rules`)}>Rules</button>
+			<button class="nav-link" onclick={() => goto(`${base}/about`)}>About</button>
+		</div>
 	</div>
 </div>
 
@@ -95,12 +89,9 @@
 		text-align: center;
 	}
 
-	.title {
-		font-size: 3rem;
-		font-weight: 800;
-		color: #F0D590;
+	.title-spacer {
+		height: 3rem;
 		line-height: 1.1;
-		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(196, 122, 16, 0.3);
 	}
 
 	.dice-icon {
@@ -140,26 +131,20 @@
 	}
 	.menu-btn.secondary:hover { opacity: 0.9; }
 
-	.menu-btn.tertiary {
-		background: rgba(255, 255, 255, 0.12);
-		color: #F0E8D8;
-		border: 2px solid rgba(255, 255, 255, 0.25);
-		backdrop-filter: blur(4px);
-	}
-	.menu-btn.tertiary:hover {
-		background: rgba(255, 255, 255, 0.2);
-		border-color: rgba(240, 213, 144, 0.5);
+	.nav-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px 16px;
+		width: 100%;
+		max-width: 280px;
 	}
 
-	.menu-footer {
-		color: rgba(255, 255, 255, 0.6);
-		font-size: var(--font-size-sm);
+	.nav-link {
+		color: rgba(255, 255, 255, 0.7);
+		font-size: var(--font-size-base);
+		font-weight: 600;
+		padding: 8px 12px;
+		text-align: center;
 	}
-
-	.about-link {
-		color: rgba(255, 255, 255, 0.6);
-		font-size: var(--font-size-sm);
-		padding: 8px 16px;
-	}
-	.about-link:hover { color: #F0D590; }
+	.nav-link:hover { color: #F0D590; }
 </style>
