@@ -99,10 +99,12 @@
 		if (state.phase !== 'ROLLING' || rolling) return;
 		rolling = true;
 		selectedCombo = null;
+		// Roll immediately to get new dice values
+		localGame.rollDice();
+		// Keep rolling state for animation duration
 		setTimeout(() => {
-			localGame.rollDice();
 			rolling = false;
-		}, 900);
+		}, 1200);
 	}
 
 	function selectCombo(combo: DiceCombination) {

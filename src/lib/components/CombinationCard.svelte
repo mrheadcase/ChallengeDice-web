@@ -9,6 +9,7 @@
 		selected?: boolean;
 		size?: ComboSize;
 		onselect?: (combo: DiceCombination) => void;
+		oninvalidselect?: (reason: string) => void;
 	}
 
 	let {
@@ -17,18 +18,26 @@
 		selected = false,
 		size = 'large',
 		onselect,
+		oninvalidselect,
 	}: Props = $props();
 
 	let invalidReason = $derived(getInvalidReason(combination, scorecard));
 	let isValid = $derived(!invalidReason);
+
+	function handleClick() {
+		if (isValid) {
+			onselect?.(combination);
+		} else if (invalidReason) {
+			oninvalidselect?.(invalidReason);
+		}
+	}
 </script>
 
 <button
 	class="combo-card size-{size}"
 	class:selected
 	class:invalid={!isValid}
-	disabled={!isValid}
-	onclick={() => onselect?.(combination)}
+	onclick={handleClick}
 	aria-label="Pair {combination.pair1Sum} and {combination.pair2Sum}, fifth die {combination.fifthDie}"
 >
 	<div class="pair-sums">
@@ -40,9 +49,6 @@
 		<span class="fifth-label">5th</span>
 		<span class="fifth-value">{combination.fifthDie}</span>
 	</div>
-	{#if invalidReason}
-		<div class="reason">{invalidReason}</div>
-	{/if}
 </button>
 
 <style>

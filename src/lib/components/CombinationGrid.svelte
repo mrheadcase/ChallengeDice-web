@@ -59,6 +59,15 @@
 		return [...valid.sort(comparator), ...invalid.sort(comparator)];
 	});
 
+	let invalidMessage = $state('');
+	let invalidTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	function showInvalidMessage(reason: string) {
+		invalidMessage = reason;
+		if (invalidTimeout) clearTimeout(invalidTimeout);
+		invalidTimeout = setTimeout(() => { invalidMessage = ''; }, 2000);
+	}
+
 	function isSelected(combo: DiceCombination): boolean {
 		if (!selectedCombination) return false;
 		return combo.pair1Sum === selectedCombination.pair1Sum
@@ -67,6 +76,10 @@
 	}
 </script>
 
+<div class="combo-wrapper">
+{#if invalidMessage}
+	<div class="invalid-toast">{invalidMessage}</div>
+{/if}
 <div class="combo-grid">
 	{#each sortedCombinations as combo}
 		<CombinationCard
@@ -75,11 +88,17 @@
 			selected={isSelected(combo)}
 			size={prefs.comboSize}
 			{onselect}
+			oninvalidselect={showInvalidMessage}
 		/>
 	{/each}
 </div>
+</div>
 
 <style>
+	.combo-wrapper {
+		position: relative;
+	}
+
 	.combo-grid {
 		display: flex;
 		flex-wrap: wrap;
@@ -89,6 +108,22 @@
 		max-height: 240px;
 		width: 100%;
 		justify-content: center;
+	}
+
+	.invalid-toast {
+		position: absolute;
+		top: -24px;
+		left: 50%;
+		transform: translateX(-50%);
+		text-align: center;
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		color: var(--score-negative);
+		background: var(--cream);
+		padding: 2px 12px;
+		border-radius: var(--radius-md);
+		z-index: 10;
+		white-space: nowrap;
 	}
 
 	@media (min-width: 768px) {

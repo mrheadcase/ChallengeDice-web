@@ -31,8 +31,6 @@ The core game logic (scoring, combinations, AI) has been ported and verified wit
 ### Not Yet Implemented
 - **Settings page** — Android has settings for: auto-roll toggle, haptic toggle, sound toggle, combo size, combo sort mode, dice animation toggle, dice roll direction, layout mode. Web has no settings page; auto-roll is always on.
 - **Scorecard pinch-to-zoom** — Scorecard scrolls but doesn't support pinch-to-zoom on mobile.
-- **Dice entrance animation** — Web uses shake-in-place; Android has slide-in from offscreen.
-- **Dice combo grouping animation** — When a combo is selected, Android physically regroups dice into pairs. Web doesn't.
 - **Score tooltips** — Click/tap on scorecard rows to see score explanation.
 
 ### Online Multiplayer (Implemented, Partially Tested)

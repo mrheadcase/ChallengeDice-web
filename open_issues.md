@@ -50,6 +50,12 @@ Issues that may need attention. Review with user before resolving.
 
 25. ~~**Game page mobile layout**~~ — FIXED: Combo selections and scorecard scroll independently on mobile. Removed "choose a combination" text. Reduced Score It button size. Combo cards are now content-responsive with flexible wrapping (like Android). PinchZoomContainer allows scrolling.
 
+26. ~~**Dice combo highlighting and regrouping**~~ — FIXED: When a combo is selected, dice now color-code by pair (blue = pair 1, green = pair 2, orange = 5th die) matching Android. Dice animate to regroup: [pair1, pair1] gap [pair2, pair2] gap [5th], centered. Legend shows below dice.
+
+27. ~~**Dice roll entrance animation**~~ — FIXED: Dice slide in from the left one by one with staggered timing, shake with random values, then settle to final values.
+
+28. ~~**Invalid combo reason on cards**~~ — FIXED: Removed inline reason text from combo cards. Tapping an unavailable combo now shows a brief overlay toast message that disappears after 2 seconds.
+
 ## Data Parity
 
 11. **AI randomness** — The AI `pickRandom` and `pickNearOptimal` functions use `Math.random()` rather than crypto-secure randomness. This is fine for gameplay but differs from the Android implementation which uses `kotlin.collections.random()` (also not crypto-secure). Not a parity issue.
