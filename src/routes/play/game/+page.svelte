@@ -147,10 +147,14 @@
 		<div class="dice-section">
 			{#if state.phase === 'ROLLING'}
 				<div class="center-block">
-					<p class="status-text">{currentPlayer?.name}'s turn to roll</p>
-					<button class="roll-btn" onclick={doRoll} disabled={rolling}>
-						{rolling ? 'Rolling...' : 'Roll Dice'}
-					</button>
+					{#if preferences.current.autoRollEnabled}
+						<p class="status-text">{currentPlayer?.name} — rolling...</p>
+					{:else}
+						<p class="status-text">{currentPlayer?.name}'s turn to roll</p>
+						<button class="roll-btn" onclick={doRoll} disabled={rolling}>
+							{rolling ? 'Rolling...' : 'Roll Dice'}
+						</button>
+					{/if}
 				</div>
 			{/if}
 
@@ -160,25 +164,24 @@
 				</div>
 			{/if}
 
-			{#if state.phase === 'SELECTING' && !localGame.isCurrentPlayerAI()}
+			{#if state.phase === 'SELECTING'}
 				<CombinationGrid
 					combinations={state.combinations}
 					validCombinations={state.validCombinations}
 					scorecard={currentPlayer?.scorecard ?? { leftMarks: {}, rightMarks: {} }}
 					selectedCombination={selectedCombo}
-					onselect={selectCombo}
+					onselect={localGame.isCurrentPlayerAI() ? undefined : selectCombo}
 				/>
-				<div class="center-block">
-					<button class="score-btn" onclick={scoreIt} disabled={!selectedCombo}>
-						{selectedCombo ? 'Score It' : 'Select a combination'}
-					</button>
-				</div>
-			{:else if state.phase === 'SELECTING' && localGame.isCurrentPlayerAI()}
-				<div class="center-block">
-					<p class="status-text">{currentPlayer?.name} is thinking...</p>
-				</div>
 			{/if}
 		</div>
+
+		{#if state.phase === 'SELECTING' && !localGame.isCurrentPlayerAI()}
+			<div class="score-bar">
+				<button class="score-btn" onclick={scoreIt} disabled={!selectedCombo}>
+					{selectedCombo ? 'Score It' : 'Select a combination'}
+				</button>
+			</div>
+		{/if}
 
 		<div class="scorecard-section">
 			<PinchZoomContainer>
@@ -253,9 +256,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-		overflow-y: auto;
-		flex: 1;
-		min-height: 0;
+		flex-shrink: 0;
 	}
 
 	.center-block {
@@ -282,6 +283,12 @@
 	.roll-btn:hover:not(:disabled) { background: var(--mid-brown); }
 	.roll-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+	.score-bar {
+		flex-shrink: 0;
+		padding: 8px 16px;
+		text-align: center;
+	}
+
 	.score-btn {
 		background: var(--btn-primary-bg);
 		color: var(--btn-primary-text);
@@ -290,7 +297,8 @@
 		font-weight: 700;
 		font-size: var(--font-size-base);
 		box-shadow: 0 2px 8px rgba(196, 122, 16, 0.3);
-		margin-top: 4px;
+		width: 100%;
+		max-width: 320px;
 	}
 	.score-btn:hover:not(:disabled) { background: var(--mid-brown); }
 	.score-btn:disabled { opacity: 0.5; cursor: not-allowed; }

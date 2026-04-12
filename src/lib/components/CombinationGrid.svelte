@@ -105,9 +105,9 @@
 		gap: 8px;
 		padding: 8px;
 		overflow-y: auto;
-		max-height: 240px;
+		max-height: 140px;
 		width: 100%;
-		justify-content: center;
+		justify-content: flex-start;
 	}
 
 	.invalid-toast {
