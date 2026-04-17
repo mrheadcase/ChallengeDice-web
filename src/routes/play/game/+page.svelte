@@ -12,6 +12,7 @@
 	import PinchZoomContainer from '$lib/components/PinchZoomContainer.svelte';
 	import type { DiceCombination } from '$lib/game/models';
 	import { preferences } from '$lib/stores/preferences.svelte';
+	import { playRollingSound, playShakingSound, tryVibrate } from '$lib/utils/sounds';
 
 	let rolling = $state(false);
 	let selectedCombo = $state<DiceCombination | null>(null);
@@ -99,6 +100,8 @@
 		if (state.phase !== 'ROLLING' || rolling) return;
 		rolling = true;
 		selectedCombo = null;
+		playRollingSound(900);
+		tryVibrate(50);
 		// Roll immediately to get new dice values
 		localGame.rollDice();
 		// Keep rolling state for animation duration
@@ -110,6 +113,8 @@
 	function selectCombo(combo: DiceCombination) {
 		if (localGame.isCurrentPlayerAI()) return;
 		selectedCombo = combo;
+		playShakingSound(400);
+		tryVibrate(15);
 	}
 
 	function scoreIt() {

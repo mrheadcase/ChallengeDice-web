@@ -14,9 +14,12 @@ The core game logic (scoring, combinations, AI) has been ported and verified wit
 - Local game store with save/resume to localStorage
 - Player setup with persistence (remembers names, colors, AI settings between sessions)
 - Main menu, player setup, rules page, about page
+- Settings page: theme (light/dark/system), auto-roll, sound, haptic, combo size, combo sort order, scorecard text size
+- Sound effects using the Android app's own `rolling_dice.mp3` (looped during roll) and `shaking_dice.mp3` (one-shot on valid combo tap), gated by `soundEnabled`. Matches Android's two-sound scheme; no sounds on Score It, invalid tap, or game over.
+- Haptic feedback (`navigator.vibrate`) on roll (50ms) and valid combo tap (15ms), gated by `hapticEnabled`
 - Stats page with high scores (7 categories) and game history
 - Scorecard rendering with penalty/scoring zones and multiplier hints
-- SVG dice with roll animation
+- SVG dice with roll animation (always on)
 - Combination card grid
 - Confetti overlay on game over
 - Elimination dialog with batching and animation deferral
@@ -29,9 +32,9 @@ The core game logic (scoring, combinations, AI) has been ported and verified wit
 - **Auto-roll timing** — Uses a round-tracking guard to prevent re-triggering, but hasn't been fully verified in multi-round play.
 
 ### Not Yet Implemented
-- **Settings page** — Android has settings for: auto-roll toggle, haptic toggle, sound toggle, combo size, combo sort mode, dice animation toggle, dice roll direction, layout mode. Web has no settings page; auto-roll is always on.
 - **Scorecard pinch-to-zoom** — Scorecard scrolls but doesn't support pinch-to-zoom on mobile.
 - **Score tooltips** — Click/tap on scorecard rows to see score explanation.
+- Android-only settings intentionally not ported: dice animation toggle (web always animates), dice roll direction, layout mode.
 
 ### Online Multiplayer (Implemented, Partially Tested)
 All Firebase operations are ported from the Android `FirebaseGameManager.kt`:

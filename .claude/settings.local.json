@@ -1,7 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(git remote:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(gh run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(npx svelte-check *)",
+      "Bash(npm run *)",
+      "Bash(cp C:/android_projects/ChallengeDice/app/src/main/res/raw/rolling_dice.mp3 C:/android_projects/ChallengeDice-web/static/sounds/)",
+      "Bash(cp C:/android_projects/ChallengeDice/app/src/main/res/raw/shaking_dice.mp3 C:/android_projects/ChallengeDice-web/static/sounds/)"
     ]
   }
 }

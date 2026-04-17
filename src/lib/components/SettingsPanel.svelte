@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { preferences, type ComboSize, type ComboSortMode, type ScorecardTextSize, type ThemeMode } from '$lib/stores/preferences.svelte';
 
-	function togglePref(key: 'autoRollEnabled' | 'diceAnimationEnabled' | 'soundEnabled' | 'hapticEnabled') {
+	function togglePref(key: 'autoRollEnabled' | 'soundEnabled' | 'hapticEnabled') {
 		preferences.update({ [key]: !preferences.current[key] });
 	}
 
@@ -45,22 +45,6 @@
 			</button>
 		</div>
 
-		<div class="toggle-row">
-			<div class="toggle-info">
-				<span class="toggle-label">Dice roll animation</span>
-				<span class="toggle-desc">Dice animate when rolled</span>
-			</div>
-			<button
-				class="toggle-switch"
-				class:active={prefs.diceAnimationEnabled}
-				onclick={() => togglePref('diceAnimationEnabled')}
-				role="switch"
-				aria-checked={prefs.diceAnimationEnabled}
-				aria-label="Dice roll animation"
-			>
-				<span class="toggle-thumb"></span>
-			</button>
-		</div>
 	</section>
 
 	<section>

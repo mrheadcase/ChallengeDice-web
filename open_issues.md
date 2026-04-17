@@ -30,7 +30,7 @@ Issues that may need attention. Review with user before resolving.
 
 9. **Landscape layout** — The responsive CSS uses width breakpoints but doesn't have specific handling for landscape phones (narrow height). Consider adding aspect-ratio-based media queries.
 
-10. **Sound effects** — The `sounds.ts` module uses synthesized tones as placeholders. For production, replace with actual audio files (dice rattle, click, game-over fanfare).
+10. ~~**Sound effects**~~ — DONE: `sounds.ts` now uses the Android app's actual mp3 files (`rolling_dice.mp3`, `shaking_dice.mp3`) copied to `static/sounds/`. Plays rolling (900ms loop) on roll and shaking (400ms one-shot) on valid combo tap, matching Android's `SoundManager.kt`. No sound on Score It, invalid tap, or game over (also matches Android).
 
 17. ~~**Dark mode styling — hardcoded white backgrounds**~~ — FIXED: Replaced all hardcoded `white` / `#FFFFFF` backgrounds across components and pages with theme-aware CSS variables (`--card-bg`, `--input-bg`, etc.). Affected files: Scorecard, PlayerTabs, EliminationDialog, online lobby/setup/gameover, local setup/gameover, stats page.
 
@@ -62,10 +62,10 @@ Issues that may need attention. Review with user before resolving.
 
 12. ~~**Stats page back button**~~ — FIXED: renamed variable to avoid shadowing.
 
-13. **Sound/haptic preference checks** — `sounds.ts` functions (`playRollSound`, `playSelectSound`, etc.) don't check `preferences.soundEnabled` internally. Callers must check. Same for `tryVibrate` and `hapticEnabled`. Consider adding preference checks inside these functions.
+13. ~~**Sound/haptic preference checks**~~ — FIXED: `sounds.ts` functions now check `preferences.soundEnabled` / `preferences.hapticEnabled` internally, so callers don't need to.
 
 14. **Host badge hardcoded to index 0** — Lobby page (`online/lobby/[gameId]`) shows "Host" badge for `i === 0` (first player in list), not the actual host UID. After host transfer this would be wrong. Should check against `onlineGame.isHost` or compare UIDs.
 
-15. **Settings page missing** — The Android app has a Settings screen (layout mode, auto-roll toggle, haptic toggle, sound toggle, combo size, combo sort mode, dice animation toggle, dice roll direction). The web version has a `/settings` route but limited options. Auto-roll is always on, sounds use Web Audio API placeholders.
+15. ~~**Settings page missing**~~ — FIXED: Settings page has theme, auto-roll, sound, haptic, combo size, combo sort, scorecard text size. Dice animation toggle intentionally omitted (animation is always on). Layout mode and dice roll direction not ported (Android-specific).
 
 16. **`gameType.replace('_', ' ')` only replaces first underscore** — Stats page line 94. Use `.replaceAll('_', ' ')` for future-proofing if game types with multiple underscores are added.

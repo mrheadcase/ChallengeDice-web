@@ -12,6 +12,7 @@
 	import type { DiceCombination } from '$lib/game/models';
 	import * as FM from '$lib/firebase/gameManager';
 	import { preferences } from '$lib/stores/preferences.svelte';
+	import { playRollingSound, playShakingSound, tryVibrate } from '$lib/utils/sounds';
 
 	let rolling = $state(false);
 	let selectedCombo = $state<DiceCombination | null>(null);
@@ -73,6 +74,8 @@
 		if (!onlineGame.isLocalPlayerRoller || rolling) return;
 		rolling = true;
 		selectedCombo = null;
+		playRollingSound(900);
+		tryVibrate(50);
 		setTimeout(async () => {
 			await onlineGame.rollDice();
 			rolling = false;
@@ -82,6 +85,8 @@
 	function handleSelectCombo(combo: DiceCombination) {
 		if (!onlineGame.canLocalPlayerSelect) return;
 		selectedCombo = combo;
+		playShakingSound(400);
+		tryVibrate(15);
 	}
 
 	async function handleConfirmSelection() {

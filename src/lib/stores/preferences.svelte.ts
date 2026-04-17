@@ -13,7 +13,6 @@ export interface UserPreferences {
 	soundEnabled: boolean;
 	hapticEnabled: boolean;
 	autoRollEnabled: boolean;
-	diceAnimationEnabled: boolean;
 	comboSize: ComboSize;
 	comboSortMode: ComboSortMode;
 	scorecardTextSize: ScorecardTextSize;
@@ -28,7 +27,6 @@ const DEFAULTS: UserPreferences = {
 	soundEnabled: true,
 	hapticEnabled: true,
 	autoRollEnabled: true,
-	diceAnimationEnabled: true,
 	comboSize: 'large',
 	comboSortMode: 'pairs_desc',
 	scorecardTextSize: 'large',

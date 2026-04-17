@@ -1,55 +1,82 @@
-// Sound effects — Web Audio API
-// Architecture ready; actual sound files loaded later
+// Sound effects — mirrors Android's SoundManager.kt.
+// Two assets: rolling_dice.mp3 (looped while dice roll) and shaking_dice.mp3
+// (one-shot on valid combo selection). Each play is clipped to a duration
+// that matches the on-screen animation, just like the Android SoundPool
+// calls `stop()` after `delay(durationMs)`.
 
-let audioContext: AudioContext | null = null;
+import { base } from '$app/paths';
+import { preferences } from '$lib/stores/preferences.svelte';
 
-function getContext(): AudioContext {
-	if (!audioContext) {
-		audioContext = new AudioContext();
+let rollingAudio: HTMLAudioElement | null = null;
+let shakingAudio: HTMLAudioElement | null = null;
+let rollingStopTimer: ReturnType<typeof setTimeout> | null = null;
+let shakingStopTimer: ReturnType<typeof setTimeout> | null = null;
+
+function getRolling(): HTMLAudioElement | null {
+	if (typeof Audio === 'undefined') return null;
+	if (!rollingAudio) {
+		rollingAudio = new Audio(`${base}/sounds/rolling_dice.mp3`);
+		rollingAudio.preload = 'auto';
+		rollingAudio.loop = true;
 	}
-	return audioContext;
+	return rollingAudio;
 }
 
-function playTone(frequency: number, duration: number, type: OscillatorType = 'sine') {
+function getShaking(): HTMLAudioElement | null {
+	if (typeof Audio === 'undefined') return null;
+	if (!shakingAudio) {
+		shakingAudio = new Audio(`${base}/sounds/shaking_dice.mp3`);
+		shakingAudio.preload = 'auto';
+	}
+	return shakingAudio;
+}
+
+function stopRolling() {
+	if (rollingStopTimer) { clearTimeout(rollingStopTimer); rollingStopTimer = null; }
+	if (rollingAudio) {
+		rollingAudio.pause();
+		rollingAudio.currentTime = 0;
+	}
+}
+
+function stopShaking() {
+	if (shakingStopTimer) { clearTimeout(shakingStopTimer); shakingStopTimer = null; }
+	if (shakingAudio) {
+		shakingAudio.pause();
+		shakingAudio.currentTime = 0;
+	}
+}
+
+export function playRollingSound(durationMs: number = 900) {
+	if (!preferences.current.soundEnabled) return;
+	const audio = getRolling();
+	if (!audio) return;
+	stopRolling();
 	try {
-		const ctx = getContext();
-		const osc = ctx.createOscillator();
-		const gain = ctx.createGain();
-		osc.type = type;
-		osc.frequency.value = frequency;
-		gain.gain.value = 0.1;
-		gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-		osc.connect(gain);
-		gain.connect(ctx.destination);
-		osc.start();
-		osc.stop(ctx.currentTime + duration);
+		audio.currentTime = 0;
+		audio.play().catch(() => { /* autoplay blocked or load failed */ });
+		rollingStopTimer = setTimeout(stopRolling, durationMs);
 	} catch {
-		// Audio not available
+		// ignore
 	}
 }
 
-export function playRollSound() {
-	// Quick rattle effect
-	for (let i = 0; i < 5; i++) {
-		setTimeout(() => playTone(200 + Math.random() * 400, 0.05, 'square'), i * 40);
+export function playShakingSound(durationMs: number = 400) {
+	if (!preferences.current.soundEnabled) return;
+	const audio = getShaking();
+	if (!audio) return;
+	stopShaking();
+	try {
+		audio.currentTime = 0;
+		audio.play().catch(() => { /* autoplay blocked or load failed */ });
+		shakingStopTimer = setTimeout(stopShaking, durationMs);
+	} catch {
+		// ignore
 	}
-}
-
-export function playSelectSound() {
-	playTone(800, 0.1, 'sine');
-}
-
-export function playErrorSound() {
-	playTone(200, 0.2, 'sawtooth');
-}
-
-export function playGameOverSound() {
-	playTone(523, 0.15);
-	setTimeout(() => playTone(659, 0.15), 150);
-	setTimeout(() => playTone(784, 0.3), 300);
 }
 
 export function tryVibrate(ms: number = 50) {
+	if (!preferences.current.hapticEnabled) return;
 	try {
 		navigator?.vibrate?.(ms);
 	} catch {
