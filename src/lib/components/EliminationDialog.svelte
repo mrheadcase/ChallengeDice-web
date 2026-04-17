@@ -17,7 +17,7 @@
 {#if visible}
 	<div class="overlay" onclick={ondismiss} role="presentation">
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<div class="dialog" onclick={(e) => e.stopPropagation()} role="alertdialog" aria-label="Player eliminated">
+		<div class="dialog" onclick={(e) => e.stopPropagation()} role="alertdialog" tabindex="-1" aria-label="Player eliminated">
 			<div class="icon">X</div>
 			<h3>{title}</h3>
 			<p>No valid combinations available.</p>

@@ -127,7 +127,6 @@
 	.size-small .pair-sums { font-size: var(--font-size-sm); gap: 2px; }
 	.size-small .fifth { font-size: var(--font-size-xs); }
 	.size-small .fifth-label { font-size: 9px; }
-	.size-small .reason { font-size: 8px; }
 
 	.combo-card.size-medium {
 		padding: 6px;

@@ -5,6 +5,8 @@ import { createEmptyGameState, createEmptyScorecard, PLAYER_COLOR_DEFAULTS } fro
 import * as GameLogic from '$lib/game/logic';
 import * as FM from '$lib/firebase/gameManager';
 import { getCurrentUid } from '$lib/firebase/auth';
+import { auth } from '$lib/firebase/config';
+import { onAuthStateChanged } from 'firebase/auth';
 import { addHighScore, type HighScoreEntry } from '$lib/stores/highScores';
 import { addGameHistory, type GameHistoryPlayer } from '$lib/stores/gameHistory';
 import type { DataSnapshot } from 'firebase/database';
@@ -45,8 +47,8 @@ class OnlineGameStore {
 	gameId = $state('');
 	localUid = $state('');
 
-	private turnOrder: string[] = [];
-	private hostUid = '';
+	turnOrder = $state<string[]>([]);
+	hostUid = $state('');
 	private finishedUids = new Set<string>();
 	private playerConnected = new Map<string, boolean>();
 	private eliminationRounds = new Map<string, number>();
@@ -55,8 +57,12 @@ class OnlineGameStore {
 	private resultsRecorded = false;
 	private unsubscribe: (() => void) | null = null;
 
-	get isHost(): boolean { return this.localUid === this.hostUid; }
+	get isHost(): boolean { return this.localUid !== '' && this.localUid === this.hostUid; }
 	get localPlayerIndex(): number { return this.turnOrder.indexOf(this.localUid); }
+
+	isPlayerHost(playerIndex: number): boolean {
+		return this.turnOrder[playerIndex] === this.hostUid && this.hostUid !== '';
+	}
 
 	get isLocalPlayerRoller(): boolean {
 		return this.gameState.currentPlayerIndex === this.localPlayerIndex
@@ -97,7 +103,8 @@ class OnlineGameStore {
 	startObserving(gameId: string) {
 		this.stopObserving();
 		this.gameId = gameId;
-		this.localUid = getCurrentUid() ?? '';
+		const uid = getCurrentUid();
+		if (uid) this.localUid = uid; // preserve previous UID if auth hasn't hydrated yet
 		this.hasLeftGame = false;
 		this.eliminationRounds.clear();
 		this.resultsRecorded = false;
@@ -120,11 +127,13 @@ class OnlineGameStore {
 			return;
 		}
 
-		this.hostUid = snapshot.child('host').val() as string ?? '';
+		const incomingHost = snapshot.child('host').val() as string | null;
+		if (incomingHost) this.hostUid = incomingHost; // ignore transient null/empty snapshots
 		const phase = snapshot.child('phase').val() as string ?? 'LOBBY';
 
-		this.turnOrder = [];
-		snapshot.child('turnOrder').forEach(c => { this.turnOrder.push(c.val()); });
+		const newTurnOrder: string[] = [];
+		snapshot.child('turnOrder').forEach(c => { newTurnOrder.push(c.val()); });
+		this.turnOrder = newTurnOrder;
 
 		const currentPlayerUid = snapshot.child('currentPlayerUid').val() as string ?? '';
 		const currentPlayerIndex = Math.max(0, this.turnOrder.indexOf(currentPlayerUid));
@@ -455,3 +464,9 @@ class OnlineGameStore {
 }
 
 export const onlineGame = new OnlineGameStore();
+
+// Keep localUid in sync with Firebase auth; covers the case where the lobby mounts
+// before anonymous auth has hydrated from IndexedDB.
+onAuthStateChanged(auth, (user) => {
+	if (user) onlineGame.localUid = user.uid;
+});

@@ -124,6 +124,8 @@
 <div
 	class="pinch-zoom-container"
 	bind:this={container}
+	role="group"
+	aria-label="Pinch-zoomable content"
 	ontouchstart={handleTouchStart}
 	ontouchmove={handleTouchMove}
 	ontouchend={handleTouchEnd}

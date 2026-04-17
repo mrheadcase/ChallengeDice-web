@@ -91,7 +91,7 @@
 				{#each gameHistoryEntries as game}
 					<div class="history-entry">
 						<div class="history-header">
-							<span class="history-type">{game.gameType.replace('_', ' ')}</span>
+							<span class="history-type">{game.gameType.replaceAll('_', ' ')}</span>
 							<span class="history-date">{formatDate(game.date)}</span>
 						</div>
 						<div class="history-meta">

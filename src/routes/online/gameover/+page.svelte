@@ -10,11 +10,19 @@
 	import ConfettiOverlay from '$lib/components/ConfettiOverlay.svelte';
 	import * as FM from '$lib/firebase/gameManager';
 
+	const REMATCH_AUTOSTART_SECONDS = 30;
+
 	let showConfetti = $state(true);
 	let viewingPlayerId = $state(0);
+	let now = $state(Date.now());
 
 	let gameState = $derived(onlineGame.gameState);
 	let rematch = $derived(onlineGame.rematchState);
+	let rematchRemainingSeconds = $derived.by(() => {
+		if (rematch.countdownStartedAt == null) return REMATCH_AUTOSTART_SECONDS;
+		const elapsed = Math.floor((now - rematch.countdownStartedAt) / 1000);
+		return Math.max(0, REMATCH_AUTOSTART_SECONDS - elapsed);
+	});
 	let allScores = $derived(
 		gameState.players.map(p => ({ player: p, score: calculateScore(p.scorecard) }))
 			.sort((a, b) => b.score.totalScore - a.score.totalScore)
@@ -23,8 +31,9 @@
 	let viewingPlayer = $derived(gameState.players.find(p => p.id === viewingPlayerId));
 
 	onMount(() => {
-		const timer = setTimeout(() => { showConfetti = false; }, 4000);
-		return () => clearTimeout(timer);
+		const confettiTimer = setTimeout(() => { showConfetti = false; }, 4000);
+		const tickTimer = setInterval(() => { now = Date.now(); }, 500);
+		return () => { clearTimeout(confettiTimer); clearInterval(tickTimer); };
 	});
 
 	$effect(() => {
@@ -132,8 +141,14 @@
 				<p class="rematch-info">
 					Waiting for others... {rematch.acceptedUids.size} accepted
 				</p>
+				{#if rematch.countdownStartedAt != null && rematchRemainingSeconds > 0}
+					<p class="countdown-info">Starting in {rematchRemainingSeconds}s</p>
+				{/if}
 			{:else if rematch.localResponse === 'NONE'}
 				<p class="rematch-info">{rematch.requestedByName} wants a rematch!</p>
+				{#if rematch.countdownStartedAt != null && rematchRemainingSeconds > 0}
+					<p class="countdown-info">Starting in {rematchRemainingSeconds}s</p>
+				{/if}
 				<div class="rematch-actions">
 					<button class="action-btn primary" onclick={handleAcceptRematch} disabled={rematchLoading}>
 						Accept
@@ -144,6 +159,9 @@
 				</div>
 			{:else if rematch.localResponse === 'ACCEPTED'}
 				<p class="rematch-info">Waiting for game to start... {rematch.acceptedUids.size} ready</p>
+				{#if rematch.countdownStartedAt != null && rematchRemainingSeconds > 0}
+					<p class="countdown-info">Starting in {rematchRemainingSeconds}s</p>
+				{/if}
 			{:else if rematch.localResponse === 'DECLINED'}
 				<p class="rematch-info">You declined the rematch</p>
 			{/if}
@@ -187,6 +205,10 @@
 
 	.rematch-section { width: 100%; max-width: 320px; text-align: center; }
 	.rematch-info { color: var(--text-medium); margin-bottom: 8px; font-weight: 600; }
+	.countdown-info {
+		color: var(--gold-amber); font-weight: 700; font-size: var(--font-size-sm);
+		margin-bottom: 8px;
+	}
 	.rematch-actions { display: flex; gap: 8px; }
 
 	.action-btn {

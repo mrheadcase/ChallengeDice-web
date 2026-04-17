@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { onlineGame } from '$lib/stores/onlineGame.svelte';
@@ -11,7 +11,7 @@
 	let starting = $state(false);
 
 	let gameState = $derived(onlineGame.gameState);
-	let gameId = $derived($page.params.gameId as string);
+	let gameId = $derived(page.params.gameId as string);
 
 	// Start observing if not already
 	$effect(() => {
@@ -108,7 +108,7 @@
 			<div class="player-row">
 				<span class="player-dot" style:background={colors.primary}></span>
 				<span class="player-name">{player.name}</span>
-				{#if i === 0}
+				{#if onlineGame.isPlayerHost(i)}
 					<span class="host-badge">Host</span>
 				{/if}
 			</div>

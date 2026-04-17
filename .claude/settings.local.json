@@ -22,7 +22,8 @@
       "Bash(awk -F'\"' '{print $2}')",
       "Bash(grep -A 1 \"play\\\\\\\\\\\\\\\\game\\\\\\\\\\\\\\\\+page\")",
       "Bash(grep -nH '\\\\$gameState\\\\|\\\\$\\\\$' src/routes/play/game/+page.svelte src/routes/play/gameover/+page.svelte 'src/routes/online/game/[gameId]/+page.svelte' src/routes/online/gameover/+page.svelte 'src/routes/online/lobby/[gameId]/+page.svelte')",
-      "Bash(grep -c '\\\\$state\\(' src/routes/play/game/+page.svelte src/routes/play/gameover/+page.svelte 'src/routes/online/game/[gameId]/+page.svelte' src/routes/online/gameover/+page.svelte 'src/routes/online/lobby/[gameId]/+page.svelte')"
+      "Bash(grep -c '\\\\$state\\(' src/routes/play/game/+page.svelte src/routes/play/gameover/+page.svelte 'src/routes/online/game/[gameId]/+page.svelte' src/routes/online/gameover/+page.svelte 'src/routes/online/lobby/[gameId]/+page.svelte')",
+      "Bash(grep -n \"setupDisconnectHandler\\\\|onDisconnect\\\\|'host'\\\\|\\\\\\\\.child\\('host'\\)\\\\|markLeft\" src/lib/firebase/gameManager.ts)"
     ]
   }
 }

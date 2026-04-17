@@ -89,8 +89,14 @@ export async function joinGame(
 
 	let abortReason: string | null = null;
 
+	// Warm the cache before the transaction. Without this, the v9 SDK can invoke
+	// the handler with currentData=null on the first pass even when server data
+	// exists, and returning `null`/existing value triggers a retry with real data.
+	await get(gameRef);
+
 	const result = await runTransaction(gameRef, (currentData) => {
-		if (!currentData) return; // abort — will retry with server data
+		// Cache miss — return the (null) value to force a retry with server data.
+		if (!currentData) return currentData;
 
 		const phase = currentData.phase;
 		if (phase !== 'LOBBY') { abortReason = null; return undefined; }

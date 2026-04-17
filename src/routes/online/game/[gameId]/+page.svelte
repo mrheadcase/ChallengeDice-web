@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { onlineGame } from '$lib/stores/onlineGame.svelte';
@@ -21,7 +21,7 @@
 	let showSettings = $state(false);
 
 	let gameState = $derived(onlineGame.gameState);
-	let gameId = $derived($page.params.gameId as string);
+	let gameId = $derived(page.params.gameId as string);
 	let localIdx = $derived(onlineGame.localPlayerIndex);
 	let viewingPlayer = $derived(gameState.players[viewingPlayerIndex]);
 

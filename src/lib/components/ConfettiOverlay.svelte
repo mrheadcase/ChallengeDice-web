@@ -10,7 +10,7 @@
 
 	let { active = false, particleCount = 80, duration = 4000 }: Props = $props();
 
-	let canvas: HTMLCanvasElement;
+	let canvas: HTMLCanvasElement = $state(null!);
 
 	interface Particle {
 		x: number;

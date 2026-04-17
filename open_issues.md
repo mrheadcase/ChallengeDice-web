@@ -16,11 +16,17 @@ Issues that may need attention. Review with user before resolving.
 
 3. **Lobby code display** — The lobby page (`online/lobby/[gameId]`) creates a second Firebase listener just to read the game code. This should be refactored to expose the code through the `onlineGame` store instead of making a separate `observeGame` call.
 
-4. **Rematch countdown timer** — The rematch countdown (30-second auto-start) UI is not yet implemented on the web. The `countdownStartedAt` timestamp is read from Firebase but no countdown timer is shown. The Android version has a `RematchBanner` with a visual countdown.
+4. ~~**Rematch countdown timer**~~ — FIXED: Online gameover page now shows "Starting in {N}s" while `rematch.countdownStartedAt` is non-null, mirroring Android's `RematchBanner` (30s auto-start, ticking every 500ms).
 
 5. **Lobby ready state** — The lobby page doesn't fully implement per-player ready toggling. The Android version tracks `ready` per player and the host sees which players are ready.
 
 6. **Host transfer in lobby** — When host leaves and another player becomes host, the lobby UI may not update the "Start Game" button visibility without a page refresh.
+
+**Fixed in this session:**
+- Host "Start Game" button visibility was broken because `hostUid`/`turnOrder` in the online store were plain class fields, so Svelte 5 didn't track changes. Made them `$state`.
+- `isHost` used to return `true` spuriously when both `localUid` and `hostUid` were empty strings, causing a brief flash. Added empty-string guard.
+- `localUid` could stay empty if the lobby mounted before Firebase auth had hydrated. Added `onAuthStateChanged` listener to sync it.
+- Join via code or open-game browse was silently aborting because the v9 modular `runTransaction` doesn't auto-retry when the handler returns `undefined` on a null cache. Added a cache-warming `get()` before the transaction and changed the null-handler branch to return the current (null) value instead of undefined, which correctly triggers a retry with server data.
 
 ## UI/UX
 
@@ -64,8 +70,8 @@ Issues that may need attention. Review with user before resolving.
 
 13. ~~**Sound/haptic preference checks**~~ — FIXED: `sounds.ts` functions now check `preferences.soundEnabled` / `preferences.hapticEnabled` internally, so callers don't need to.
 
-14. **Host badge hardcoded to index 0** — Lobby page (`online/lobby/[gameId]`) shows "Host" badge for `i === 0` (first player in list), not the actual host UID. After host transfer this would be wrong. Should check against `onlineGame.isHost` or compare UIDs.
+14. ~~**Host badge hardcoded to index 0**~~ — FIXED: Lobby now uses `onlineGame.isPlayerHost(i)` which compares against the actual host UID from Firebase, so badge remains correct after host transfer.
 
 15. ~~**Settings page missing**~~ — FIXED: Settings page has theme, auto-roll, sound, haptic, combo size, combo sort, scorecard text size. Dice animation toggle intentionally omitted (animation is always on). Layout mode and dice roll direction not ported (Android-specific).
 
-16. **`gameType.replace('_', ' ')` only replaces first underscore** — Stats page line 94. Use `.replaceAll('_', ' ')` for future-proofing if game types with multiple underscores are added.
+16. ~~**`gameType.replace('_', ' ')` only replaces first underscore**~~ — FIXED: Changed to `.replaceAll('_', ' ')` on stats page.

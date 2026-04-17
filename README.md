@@ -43,16 +43,16 @@ All Firebase operations are ported from the Android `FirebaseGameManager.kt`:
 - Real-time game state sync via Firebase listeners
 - Simultaneous scoring (all players score independently, host advances rounds)
 - Disconnect detection and self-healing reconnect
-- Rematch system (request/accept/decline)
+- Rematch system (request/accept/decline) with visible "Starting in Ns" countdown mirroring Android's `RematchBanner`
 - Firebase App Check with reCAPTCHA v3 (attestation for web client)
+- Host badge in lobby is UID-based (survives host transfer)
 
-Game creation and lobby tested successfully. Full gameplay flow needs further testing.
+End-to-end flow tested: create, lobby, join-by-code, join-open-game, host-start, simultaneous scoring, rematch.
 
 #### Online-Specific Known Issues
-- Rematch countdown timer UI not implemented (data is read, timer not shown)
 - Lobby ready state simplified (no per-player ready toggle)
-- Host badge hardcoded to player index 0, not actual host UID
 - Lobby code read via separate listener (should use onlineGame store)
+- Host transfer in lobby doesn't refresh the "Start Game" button without a reload
 
 ## Tech Stack
 

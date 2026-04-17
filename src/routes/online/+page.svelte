@@ -142,6 +142,7 @@
 						class="color-swatch"
 						class:selected={playerColor === color}
 						style:background={cs.primary}
+						aria-label={color}
 						onclick={() => { playerColor = color; }}
 					></button>
 				{/each}
