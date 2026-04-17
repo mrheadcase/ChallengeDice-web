@@ -22,17 +22,17 @@
 	let autoRolledRound = $state(-1);
 	let showSettings = $state(false);
 
-	let state = $derived(localGame.gameState);
-	let currentPlayer = $derived(state.players[state.currentPlayerIndex]);
-	let viewingPlayer = $derived(state.players[viewingPlayerIndex]);
+	let gameState = $derived(localGame.gameState);
+	let currentPlayer = $derived(gameState.players[gameState.currentPlayerIndex]);
+	let viewingPlayer = $derived(gameState.players[viewingPlayerIndex]);
 
 	// Track eliminations — use untrack to avoid read/write cycle on prevActiveIds
 	let prevActiveIds: number[] = [];
 	$effect(() => {
-		const currentIds = state.players.filter(p => p.isActive).map(p => p.id);
+		const currentIds = gameState.players.filter(p => p.isActive).map(p => p.id);
 		const eliminated = prevActiveIds.filter(id => !currentIds.includes(id));
 		if (eliminated.length > 0) {
-			const names = eliminated.map(id => state.players.find(p => p.id === id)?.name).filter(Boolean) as string[];
+			const names = eliminated.map(id => gameState.players.find(p => p.id === id)?.name).filter(Boolean) as string[];
 			if (names.length > 0) {
 				eliminatedNames = names;
 			}
@@ -42,27 +42,27 @@
 
 	// Redirect to menu if no game
 	$effect(() => {
-		if (state.phase === 'SETUP' && state.players.length === 0) {
+		if (gameState.phase === 'SETUP' && gameState.players.length === 0) {
 			goto(`${base}/`);
 		}
 	});
 
 	// Redirect to game over
 	$effect(() => {
-		if (state.phase === 'GAME_OVER' && eliminatedNames.length === 0) {
+		if (gameState.phase === 'GAME_OVER' && eliminatedNames.length === 0) {
 			goto(`${base}/play/gameover`);
 		}
-		if (state.phase === 'GAME_OVER' && eliminatedNames.length > 0) {
+		if (gameState.phase === 'GAME_OVER' && eliminatedNames.length > 0) {
 			pendingGameOver = true;
 		}
 	});
 
 	// Auto-roll — read reactive deps first so $effect always tracks them
 	$effect(() => {
-		const shouldRoll = state.phase === 'ROLLING' && !rolling && autoRolledRound !== state.currentRound;
+		const shouldRoll = gameState.phase === 'ROLLING' && !rolling && autoRolledRound !== gameState.currentRound;
 		if (shouldRoll && preferences.current.autoRollEnabled) {
 			const t = setTimeout(() => {
-				autoRolledRound = state.currentRound;
+				autoRolledRound = gameState.currentRound;
 				doRoll();
 			}, 800);
 			return () => clearTimeout(t);
@@ -71,7 +71,7 @@
 
 	// Auto-play AI
 	$effect(() => {
-		if (state.phase === 'SELECTING' && localGame.isCurrentPlayerAI()) {
+		if (gameState.phase === 'SELECTING' && localGame.isCurrentPlayerAI()) {
 			const t1 = setTimeout(() => {
 				const combo = localGame.getAiSelection();
 				if (combo) selectedCombo = combo;
@@ -91,20 +91,20 @@
 
 	// Snap viewing to current player on new selection phase
 	$effect(() => {
-		if (state.phase === 'SELECTING') {
-			viewingPlayerIndex = state.currentPlayerIndex;
+		if (gameState.phase === 'SELECTING') {
+			viewingPlayerIndex = gameState.currentPlayerIndex;
 		}
 	});
 
 	function doRoll() {
-		if (state.phase !== 'ROLLING' || rolling) return;
+		if (gameState.phase !== 'ROLLING' || rolling) return;
 		rolling = true;
 		selectedCombo = null;
 		playRollingSound(900);
 		tryVibrate(50);
 		// Roll immediately to get new dice values
 		localGame.rollDice();
-		// Keep rolling state for animation duration
+		// Keep rolling gameState for animation duration
 		setTimeout(() => {
 			rolling = false;
 		}, 1200);
@@ -135,7 +135,7 @@
 <div class="game-page">
 	<div class="top-bar">
 		<a href={`${base}/`} class="icon-btn">Menu</a>
-		<span class="round-label">Round {state.currentRound}</span>
+		<span class="round-label">Round {gameState.currentRound}</span>
 		<div class="top-bar-right">
 			<button class="icon-btn" onclick={() => { showSettings = true; }}>Settings</button>
 			<a href={`${base}/rules`} class="icon-btn">Rules</a>
@@ -143,14 +143,14 @@
 	</div>
 
 	<PlayerTabs
-		players={state.players}
+		players={gameState.players}
 		activeIndex={viewingPlayerIndex}
 		onselect={(i) => { viewingPlayerIndex = i; }}
 	/>
 
 	<div class="game-content">
 		<div class="dice-section">
-			{#if state.phase === 'ROLLING'}
+			{#if gameState.phase === 'ROLLING'}
 				<div class="center-block">
 					{#if preferences.current.autoRollEnabled}
 						<p class="status-text">{currentPlayer?.name} — rolling...</p>
@@ -163,16 +163,16 @@
 				</div>
 			{/if}
 
-			{#if state.diceValues.length > 0}
+			{#if gameState.diceValues.length > 0}
 				<div class="center-block">
-					<DiceDisplay diceValues={state.diceValues} {rolling} selectedCombination={selectedCombo} />
+					<DiceDisplay diceValues={gameState.diceValues} {rolling} selectedCombination={selectedCombo} />
 				</div>
 			{/if}
 
-			{#if state.phase === 'SELECTING'}
+			{#if gameState.phase === 'SELECTING'}
 				<CombinationGrid
-					combinations={state.combinations}
-					validCombinations={state.validCombinations}
+					combinations={gameState.combinations}
+					validCombinations={gameState.validCombinations}
 					scorecard={currentPlayer?.scorecard ?? { leftMarks: {}, rightMarks: {} }}
 					selectedCombination={selectedCombo}
 					onselect={localGame.isCurrentPlayerAI() ? undefined : selectCombo}
@@ -180,7 +180,7 @@
 			{/if}
 		</div>
 
-		{#if state.phase === 'SELECTING' && !localGame.isCurrentPlayerAI()}
+		{#if gameState.phase === 'SELECTING' && !localGame.isCurrentPlayerAI()}
 			<div class="score-bar">
 				<button class="score-btn" onclick={scoreIt} disabled={!selectedCombo}>
 					{selectedCombo ? 'Score It' : 'Select a combination'}
@@ -194,7 +194,7 @@
 					<Scorecard
 						scorecard={viewingPlayer.scorecard}
 						playerColor={viewingPlayer.color}
-						previewCombination={viewingPlayerIndex === state.currentPlayerIndex ? selectedCombo : null}
+						previewCombination={viewingPlayerIndex === gameState.currentPlayerIndex ? selectedCombo : null}
 					/>
 				{/if}
 			</PinchZoomContainer>

@@ -20,10 +20,10 @@
 	let autoRolledRound = $state(-1);
 	let showSettings = $state(false);
 
-	let state = $derived(onlineGame.gameState);
-	let gameId = $derived($page.params.gameId);
+	let gameState = $derived(onlineGame.gameState);
+	let gameId = $derived($page.params.gameId as string);
 	let localIdx = $derived(onlineGame.localPlayerIndex);
-	let viewingPlayer = $derived(state.players[viewingPlayerIndex]);
+	let viewingPlayer = $derived(gameState.players[viewingPlayerIndex]);
 
 	// Start observing if not already
 	$effect(() => {
@@ -34,27 +34,27 @@
 
 	// Auto-switch to local player's scorecard when selecting
 	$effect(() => {
-		if (state.phase === 'SELECTING' && localIdx >= 0) {
+		if (gameState.phase === 'SELECTING' && localIdx >= 0) {
 			viewingPlayerIndex = localIdx;
 		}
 	});
 
 	// Navigate on game over
 	$effect(() => {
-		if (state.phase === 'GAME_OVER') {
+		if (gameState.phase === 'GAME_OVER') {
 			goto(`${base}/online/gameover`);
 		}
 	});
 
 	// Auto-roll — read reactive deps first so $effect always tracks them
 	$effect(() => {
-		const shouldRoll = state.phase === 'ROLLING'
+		const shouldRoll = gameState.phase === 'ROLLING'
 			&& onlineGame.isLocalPlayerRoller
 			&& !rolling
-			&& autoRolledRound !== state.currentRound;
+			&& autoRolledRound !== gameState.currentRound;
 		if (shouldRoll && preferences.current.autoRollEnabled) {
 			const t = setTimeout(() => {
-				autoRolledRound = state.currentRound;
+				autoRolledRound = gameState.currentRound;
 				handleRoll();
 			}, 800);
 			return () => clearTimeout(t);
@@ -106,10 +106,10 @@
 <div class="game-page">
 	<div class="top-bar">
 		<button class="icon-btn" onclick={leave}>Leave</button>
-		<span class="round-label">Round {state.currentRound}</span>
-		{#if state.disconnectedPlayerNames.length > 0}
+		<span class="round-label">Round {gameState.currentRound}</span>
+		{#if gameState.disconnectedPlayerNames.length > 0}
 			<span class="disconnected-info">
-				{state.disconnectedPlayerNames.join(', ')} disconnected
+				{gameState.disconnectedPlayerNames.join(', ')} disconnected
 			</span>
 		{/if}
 		<div class="top-bar-right">
@@ -119,14 +119,14 @@
 	</div>
 
 	<PlayerTabs
-		players={state.players}
+		players={gameState.players}
 		activeIndex={viewingPlayerIndex}
 		onselect={(i) => { viewingPlayerIndex = i; }}
 	/>
 
 	<div class="game-content">
 		<div class="dice-section">
-			{#if state.phase === 'ROLLING'}
+			{#if gameState.phase === 'ROLLING'}
 				{#if onlineGame.isLocalPlayerRoller}
 					<div class="roll-prompt">
 						<p>Your turn to roll!</p>
@@ -136,23 +136,23 @@
 					</div>
 				{:else}
 					<div class="waiting-prompt">
-						<p>Waiting for {state.players[state.currentPlayerIndex]?.name ?? 'player'} to roll...</p>
+						<p>Waiting for {gameState.players[gameState.currentPlayerIndex]?.name ?? 'player'} to roll...</p>
 					</div>
 				{/if}
 			{/if}
 
-			{#if state.diceValues.length > 0}
-				<DiceDisplay diceValues={state.diceValues} {rolling} selectedCombination={selectedCombo} />
+			{#if gameState.diceValues.length > 0}
+				<DiceDisplay diceValues={gameState.diceValues} {rolling} selectedCombination={selectedCombo} />
 			{/if}
 
-			{#if state.phase === 'SELECTING'}
+			{#if gameState.phase === 'SELECTING'}
 				{#if onlineGame.canLocalPlayerSelect}
 					<div class="selecting-info">
 						<p class="selecting-label">Choose your combination:</p>
 						<CombinationGrid
-							combinations={state.combinations}
-							validCombinations={state.validCombinations}
-							scorecard={state.players[localIdx]?.scorecard ?? { leftMarks: {}, rightMarks: {} }}
+							combinations={gameState.combinations}
+							validCombinations={gameState.validCombinations}
+							scorecard={gameState.players[localIdx]?.scorecard ?? { leftMarks: {}, rightMarks: {} }}
 							selectedCombination={selectedCombo}
 							onselect={handleSelectCombo}
 						/>
@@ -164,7 +164,7 @@
 					<div class="waiting-prompt">
 						<p>Waiting for other players...</p>
 						<p class="finished-count">
-							{state.playersFinishedThisRound.size} / {state.players.filter(p => p.isActive).length} done
+							{gameState.playersFinishedThisRound.size} / {gameState.players.filter(p => p.isActive).length} done
 						</p>
 					</div>
 				{/if}

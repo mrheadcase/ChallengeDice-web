@@ -10,8 +10,8 @@
 	let copied = $state(false);
 	let starting = $state(false);
 
-	let state = $derived(onlineGame.gameState);
-	let gameId = $derived($page.params.gameId);
+	let gameState = $derived(onlineGame.gameState);
+	let gameId = $derived($page.params.gameId as string);
 
 	// Start observing if not already
 	$effect(() => {
@@ -22,12 +22,12 @@
 
 	// Redirect when game starts
 	$effect(() => {
-		if (state.phase === 'ROLLING' || state.phase === 'SELECTING') {
+		if (gameState.phase === 'ROLLING' || gameState.phase === 'SELECTING') {
 			goto(`${base}/online/game/${gameId}`);
 		}
 	});
 
-	// Find lobby code from game state (read from Firebase)
+	// Find lobby code from game gameState (read from Firebase)
 	let lobbyCode = $state('');
 	$effect(() => {
 		const unsub = FM.observeGame(gameId, (snap) => {
@@ -36,7 +36,7 @@
 		return unsub;
 	});
 
-	let allReady = $derived(state.players.length >= 2 && state.players.every(p => true)); // simplified
+	let allReady = $derived(gameState.players.length >= 2 && gameState.players.every(p => true)); // simplified
 
 	async function copyCode() {
 		if (lobbyCode) {
@@ -49,15 +49,15 @@
 	async function toggleReady() {
 		const localIdx = onlineGame.localPlayerIndex;
 		if (localIdx < 0) return;
-		// Toggle ready (simplified — in full impl, tracks per-player ready state from Firebase)
+		// Toggle ready (simplified — in full impl, tracks per-player ready gameState from Firebase)
 		await FM.setPlayerReady(gameId, true);
 	}
 
 	async function startGameNow() {
-		if (!onlineGame.isHost || state.players.length < 2) return;
+		if (!onlineGame.isHost || gameState.players.length < 2) return;
 		starting = true;
 		try {
-			const turnOrder = state.players.map((_, i) => {
+			const turnOrder = gameState.players.map((_, i) => {
 				// Get UIDs from turn order in the store
 				return ''; // Will be read from Firebase
 			});
@@ -102,8 +102,8 @@
 
 	<!-- Players -->
 	<div class="players-section">
-		<h3>Players ({state.players.length}/4)</h3>
-		{#each state.players as player, i}
+		<h3>Players ({gameState.players.length}/4)</h3>
+		{#each gameState.players as player, i}
 			{@const colors = PLAYER_COLORS[player.color]}
 			<div class="player-row">
 				<span class="player-dot" style:background={colors.primary}></span>
@@ -114,7 +114,7 @@
 			</div>
 		{/each}
 
-		{#if state.players.length < 4}
+		{#if gameState.players.length < 4}
 			<div class="player-row empty">
 				<span class="waiting">Waiting for players...</span>
 			</div>
@@ -127,9 +127,9 @@
 			<button
 				class="action-btn primary"
 				onclick={startGameNow}
-				disabled={state.players.length < 2 || starting}
+				disabled={gameState.players.length < 2 || starting}
 			>
-				{starting ? 'Starting...' : `Start Game (${state.players.length} players)`}
+				{starting ? 'Starting...' : `Start Game (${gameState.players.length} players)`}
 			</button>
 		{:else}
 			<div class="waiting-msg">Waiting for host to start...</div>

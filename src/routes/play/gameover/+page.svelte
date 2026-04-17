@@ -13,19 +13,19 @@
 	let showConfetti = $state(true);
 	let viewingPlayerId = $state(0);
 
-	let state = $derived(localGame.gameState);
+	let gameState = $derived(localGame.gameState);
 	let allScores = $derived(
-		state.players.map(p => ({
+		gameState.players.map(p => ({
 			player: p,
 			score: calculateScore(p.scorecard),
 		})).sort((a, b) => b.score.totalScore - a.score.totalScore)
 	);
 	let winner = $derived(allScores[0]);
-	let viewingPlayer = $derived(state.players.find(p => p.id === viewingPlayerId));
+	let viewingPlayer = $derived(gameState.players.find(p => p.id === viewingPlayerId));
 
-	// Redirect if no game over state
+	// Redirect if no game over gameState
 	$effect(() => {
-		if (state.phase !== 'GAME_OVER' || state.players.length === 0) {
+		if (gameState.phase !== 'GAME_OVER' || gameState.players.length === 0) {
 			goto(base || '/');
 		}
 	});

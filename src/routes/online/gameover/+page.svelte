@@ -13,14 +13,14 @@
 	let showConfetti = $state(true);
 	let viewingPlayerId = $state(0);
 
-	let state = $derived(onlineGame.gameState);
+	let gameState = $derived(onlineGame.gameState);
 	let rematch = $derived(onlineGame.rematchState);
 	let allScores = $derived(
-		state.players.map(p => ({ player: p, score: calculateScore(p.scorecard) }))
+		gameState.players.map(p => ({ player: p, score: calculateScore(p.scorecard) }))
 			.sort((a, b) => b.score.totalScore - a.score.totalScore)
 	);
 	let winner = $derived(allScores[0]);
-	let viewingPlayer = $derived(state.players.find(p => p.id === viewingPlayerId));
+	let viewingPlayer = $derived(gameState.players.find(p => p.id === viewingPlayerId));
 
 	onMount(() => {
 		const timer = setTimeout(() => { showConfetti = false; }, 4000);
@@ -28,7 +28,7 @@
 	});
 
 	$effect(() => {
-		if (state.phase !== 'GAME_OVER' && state.phase !== 'SETUP') {
+		if (gameState.phase !== 'GAME_OVER' && gameState.phase !== 'SETUP') {
 			// Game restarted (rematch started)
 			if (onlineGame.gameId) {
 				goto(`${base}/online/game/${onlineGame.gameId}`);
@@ -51,7 +51,7 @@
 		const newGameId = await onlineGame.requestRematch();
 		rematchLoading = false;
 		if (newGameId) {
-			// Stay on this page — rematch state will update via Firebase
+			// Stay on this page — rematch gameState will update via Firebase
 		}
 	}
 
