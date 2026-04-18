@@ -147,4 +147,26 @@
 		text-align: center;
 	}
 	.nav-link:hover { color: #F0D590; }
+
+	/* Landscape on phones — put the logo on the left, menu on the right */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.menu-content {
+			display: grid;
+			grid-template-columns: auto minmax(240px, 360px);
+			grid-template-areas:
+				"logo buttons"
+				"logo nav";
+			gap: 8px 32px;
+			padding: 12px 24px;
+			align-items: center;
+			justify-content: center;
+		}
+		.logo-section { grid-area: logo; }
+		.menu-buttons { grid-area: buttons; align-self: end; max-width: none; gap: 8px; }
+		.nav-grid { grid-area: nav; align-self: start; max-width: none; gap: 4px 16px; }
+		.title-spacer { display: none; }
+		.dice-icon { width: 140px; margin-top: 0; }
+		.menu-btn { padding: 10px 20px; font-size: var(--font-size-base); }
+		.nav-link { padding: 4px 8px; font-size: var(--font-size-sm); }
+	}
 </style>

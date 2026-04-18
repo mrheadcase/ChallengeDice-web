@@ -131,4 +131,13 @@
 			max-height: 300px;
 		}
 	}
+
+	/* Landscape on phones — cap height so it doesn't swallow the scorecard side */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.combo-grid {
+			max-height: 120px;
+			padding: 4px;
+			gap: 4px;
+		}
+	}
 </style>

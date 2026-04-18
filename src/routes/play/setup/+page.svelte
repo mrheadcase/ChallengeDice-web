@@ -403,4 +403,39 @@
 	}
 
 	.start-btn:hover { background: #A86400; }
+
+	/* Landscape on phones — compact to fit the short viewport */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.setup-page {
+			gap: 8px;
+			padding: 8px 12px;
+		}
+		.setup-header { gap: 8px; }
+		h2 { font-size: var(--font-size-lg); }
+		.back-btn { padding: 4px 8px; font-size: var(--font-size-sm); }
+
+		.player-count { gap: 8px; font-size: var(--font-size-sm); }
+		.count-btn { width: 36px; height: 36px; font-size: var(--font-size-base); }
+
+		.players-list {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 8px;
+		}
+
+		.player-card { padding: 8px; }
+		.player-header { margin-bottom: 4px; gap: 6px; }
+		.player-number { width: 26px; height: 26px; font-size: var(--font-size-xs); }
+		.name-input { padding: 5px 8px; font-size: var(--font-size-sm); }
+		.player-options { gap: 4px; }
+		.option-row { gap: 6px; }
+		.option-label { min-width: 44px; font-size: var(--font-size-xs); }
+		.color-swatch { width: 24px; height: 24px; min-width: 24px; min-height: 24px; border-width: 2px; }
+		.color-picker { gap: 4px; }
+		.ai-toggle { font-size: var(--font-size-xs); }
+		.ai-toggle input { width: 14px; height: 14px; }
+		.difficulty-select { padding: 3px 6px; font-size: var(--font-size-xs); min-height: 28px; }
+
+		.start-btn { padding: 10px; font-size: var(--font-size-base); margin-top: 0; }
+	}
 </style>

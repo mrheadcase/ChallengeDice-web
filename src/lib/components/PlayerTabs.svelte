@@ -120,4 +120,11 @@
 		border-radius: 3px;
 		font-weight: 700;
 	}
+
+	/* Landscape on phones — compact tabs to save vertical space */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.player-tabs { padding: 2px 6px; gap: 3px; }
+		.player-tab { padding: 3px 8px; gap: 4px; }
+		.player-name, .player-score { font-size: var(--font-size-xs); }
+	}
 </style>

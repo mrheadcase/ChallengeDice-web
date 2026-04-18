@@ -34,7 +34,7 @@ Issues that may need attention. Review with user before resolving.
 
 8. **Simultaneous elimination dialog** — When multiple players are eliminated in the same round (during `rollDice`), only the last eliminated player's name is shown in the dialog. The Android version also has this limitation but a queue approach would be better.
 
-9. **Landscape layout** — The responsive CSS uses width breakpoints but doesn't have specific handling for landscape phones (narrow height). Consider adding aspect-ratio-based media queries.
+9. ~~**Landscape layout**~~ — FIXED: Added `(orientation: landscape) and (max-height: 500px)` media queries for the main menu (logo left, buttons/nav right via CSS grid), new-game setup (2-column player grid, compact cards), and game pages (side-by-side dice/scorecard, compressed top bar and player tabs, Score It button moved inside the dice column so it no longer steals horizontal space).
 
 10. ~~**Sound effects**~~ — DONE: `sounds.ts` now uses the Android app's actual mp3 files (`rolling_dice.mp3`, `shaking_dice.mp3`) copied to `static/sounds/`. Plays rolling (900ms loop) on roll and shaking (400ms one-shot) on valid combo tap, matching Android's `SoundManager.kt`. No sound on Score It, invalid tap, or game over (also matches Android).
 

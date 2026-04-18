@@ -237,4 +237,29 @@
 		.dice-section { flex: 0 0 45%; overflow-y: auto; }
 		.scorecard-section { flex: 0 0 55%; }
 	}
+
+	/* Landscape on phones — switch to side-by-side to fit the short viewport height */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.top-bar { padding: 4px 12px; flex-wrap: nowrap; }
+		.round-label { font-size: var(--font-size-sm); }
+		.icon-btn { padding: 4px 8px; }
+
+		.game-content { flex-direction: row; }
+		.dice-section {
+			flex: 0 0 50%;
+			padding: 4px;
+			gap: 4px;
+			overflow-y: auto;
+			min-height: 0;
+		}
+		.scorecard-section {
+			flex: 0 0 50%;
+			padding: 4px;
+		}
+
+		.roll-prompt, .waiting-prompt { padding: 8px; }
+		.roll-prompt p, .waiting-prompt p { margin-bottom: 6px; }
+		.roll-btn { padding: 8px 24px; font-size: var(--font-size-base); }
+		.confirm-btn { padding: 8px 20px; }
+	}
 </style>

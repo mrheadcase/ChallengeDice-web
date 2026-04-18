@@ -177,16 +177,15 @@
 					selectedCombination={selectedCombo}
 					onselect={localGame.isCurrentPlayerAI() ? undefined : selectCombo}
 				/>
+				{#if !localGame.isCurrentPlayerAI()}
+					<div class="score-bar">
+						<button class="score-btn" onclick={scoreIt} disabled={!selectedCombo}>
+							{selectedCombo ? 'Score It' : 'Select a combination'}
+						</button>
+					</div>
+				{/if}
 			{/if}
 		</div>
-
-		{#if gameState.phase === 'SELECTING' && !localGame.isCurrentPlayerAI()}
-			<div class="score-bar">
-				<button class="score-btn" onclick={scoreIt} disabled={!selectedCombo}>
-					{selectedCombo ? 'Score It' : 'Select a combination'}
-				</button>
-			</div>
-		{/if}
 
 		<div class="scorecard-section">
 			<PinchZoomContainer>
@@ -325,5 +324,30 @@
 		.scorecard-section {
 			flex: 1 1 50%;
 		}
+	}
+
+	/* Landscape on phones — switch to side-by-side to fit the short viewport height */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.top-bar { padding: 4px 12px; }
+		.round-label { font-size: var(--font-size-sm); }
+		.icon-btn { padding: 4px 8px; }
+
+		.game-content { flex-direction: row; }
+		.dice-section {
+			flex: 0 0 50%;
+			padding: 4px;
+			gap: 4px;
+			overflow-y: auto;
+			min-height: 0;
+		}
+		.scorecard-section {
+			flex: 0 0 50%;
+			padding: 4px;
+		}
+
+		.status-text { margin-bottom: 4px; }
+		.roll-btn { padding: 8px 24px; font-size: var(--font-size-base); }
+		.score-bar { padding: 4px 8px; }
+		.score-btn { padding: 8px 16px; }
 	}
 </style>

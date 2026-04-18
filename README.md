@@ -24,7 +24,7 @@ The core game logic (scoring, combinations, AI) has been ported and verified wit
 - Confetti overlay on game over
 - Elimination dialog with batching and animation deferral
 - GitHub Actions deploy workflow
-- Mobile-responsive CSS (3 breakpoints)
+- Mobile-responsive CSS: width breakpoints (768px tablet, 1024px desktop) plus `(orientation: landscape) and (max-height: 500px)` for phone landscape on the main menu, setup page, and game pages (side-by-side dice/scorecard, compact top bar and player tabs)
 
 ### Known Bugs (Active)
 - **Combo card selection may not update the Score It button** — The `selectedCombo` state may not be triggering reactivity correctly in Svelte 5. The button shows "Select a combination" (disabled) but clicking a combo card doesn't change it to "Score It". Needs debugging with browser devtools.
