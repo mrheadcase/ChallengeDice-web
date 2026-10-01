@@ -35,7 +35,7 @@
 				{/if}
 			</span>
 			<span class="player-score" class:positive={score > 0} class:negative={score < 0}>
-				{score}
+				{score < 0 ? `−${Math.abs(score)}` : score}
 			</span>
 			{#if !player.isActive}
 				<span class="eliminated-badge">OUT</span>

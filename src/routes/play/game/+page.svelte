@@ -345,27 +345,76 @@
 	 * sized to its grid, on the right. The tabs share the same max width so they
 	 * line up with the board edge.
 	 */
-	@media (min-width: 1024px) {
+	@media (min-width: 1024px) and (min-height: 501px) {
 		.tabs-row,
 		.game-content {
 			width: 100%;
 			max-width: 1120px;
 			margin-inline: auto;
 		}
+		/*
+		 * One grid row sized by the scorecard (capped at the available height), so the
+		 * turn panel and the scorecard always render as equal-height cards.
+		 */
 		.game-content {
-			flex-direction: row;
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			grid-template-rows: fit-content(100%);
+			align-content: start;
 			gap: var(--space-xl);
 			padding: var(--space-lg);
 		}
 		.dice-section {
+			min-height: 0;
+			overflow-y: auto;
+			justify-content: center;
+			padding: var(--space-lg);
+			background: var(--card-bg);
+			border-radius: var(--radius-lg);
+			box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+		}
+		/* Combo cards sit on the page colour so they stay distinct inside the panel card */
+		.dice-section :global(.combo-card:not(.selected):not(.invalid)) {
+			background: var(--cream);
+		}
+		.scorecard-section {
+			/* Cells are already at full size here, so size to content instead */
+			container-type: normal;
+		}
+	}
+
+	/*
+	 * Portrait phones: the turn panel always fills exactly the space above the scorecard,
+	 * so the scorecard stays put from turn to turn however many combinations there are.
+	 * Content stacks from the top — dice, then the combinations right under them, then the
+	 * action bar — with any spare space left at the bottom of the panel; the grid scrolls
+	 * when they don't fit. The scorecard is capped so the panel keeps ~200px; on very
+	 * short screens it scrolls.
+	 */
+	@media (max-width: 767px) and (orientation: portrait) {
+		.game-content {
+			gap: var(--space-sm);
+			padding: var(--space-sm) var(--space-md) var(--space-md);
+		}
+		.dice-section {
 			flex: 1 1 0;
-			min-width: 0;
-			align-self: flex-start;
+			min-height: 0;
+			gap: var(--space-sm);
 		}
 		.scorecard-section {
 			flex: 0 0 auto;
-			/* Cells are already at full size here, so size to content instead */
-			container-type: normal;
+			max-height: calc(100% - 200px - var(--space-sm));
+		}
+		/*
+		 * The scorecard's position no longer depends on this bar here (only the combo
+		 * grid resizes), so drop the reserved button height and shrink the hint.
+		 */
+		.score-bar {
+			min-height: 0;
+		}
+		.score-hint {
+			font-size: var(--font-size-xs);
+			line-height: var(--line-height-xs);
 		}
 	}
 

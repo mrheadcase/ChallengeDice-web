@@ -19,12 +19,12 @@
 		onselect,
 	}: Props = $props();
 
-	// Fixed column width per card size — wide enough for two-digit pair sums ("10 + 12")
+	// Fixed column width per card size — wide enough for two two-digit chips plus the 5th-die chip
 	const SIZE_MAP: Record<ComboSize, string> = {
-		small: '64px',
-		medium: '76px',
-		large: '88px',
-		extra_large: '112px',
+		small: '88px',
+		medium: '96px',
+		large: '104px',
+		extra_large: '128px',
 	};
 
 	let prefs = $derived(preferences.current);
@@ -133,6 +133,26 @@
 	@media (min-width: 768px) {
 		.combo-grid {
 			max-height: 300px;
+		}
+	}
+
+	/*
+	 * Portrait phones: the grid is its natural height, shrinking (and scrolling) only when
+	 * the turn panel runs out of room above the scorecard. It never grows, so a single row
+	 * of cards sits right above the action bar with no empty band between them.
+	 */
+	@media (max-width: 767px) and (orientation: portrait) {
+		.combo-wrapper {
+			flex: 0 1 auto;
+			min-height: 0;
+			display: flex;
+			flex-direction: column;
+		}
+		.combo-grid {
+			flex: 0 1 auto;
+			min-height: 0;
+			max-height: none;
+			align-content: start;
 		}
 	}
 

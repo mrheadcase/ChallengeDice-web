@@ -65,6 +65,11 @@
 		return null;
 	}
 
+	// True minus sign (−) to match the sheet's labels; hyphens read as dashes
+	function formatScore(n: number): string {
+		return n < 0 ? `−${Math.abs(n)}` : String(n);
+	}
+
 	function isBoxFilled(rowNumber: number, boxIndex: number): boolean {
 		const marks = scorecard.leftMarks[rowNumber] ?? 0;
 		return boxIndex < marks;
@@ -109,7 +114,7 @@
 <div class="scorecard" class:compact style:--sc-scale={textScale}>
 	<!-- LEFT SCORECARD -->
 	<div class="scorecard-section">
-		<!-- Header row — quiet zone labels; the penalty label ends at the zone's right edge -->
+		<!-- Header row — quiet zone labels, centred over their columns -->
 		<div class="scorecard-row header-row">
 			<span class="row-label"></span>
 			<span class="header-penalty" style:width="calc(var(--cell) * {MAX_PENALTY_DISPLAY})">Penalty −10</span>
@@ -186,20 +191,43 @@
 				{/each}
 				<span class="zone-gap"></span>
 				<span class="row-score" class:positive={score > 0} class:negative={score < 0}>
-					{score !== 0 ? score : ''}
+					{score !== 0 ? formatScore(score) : ''}
 				</span>
 			</div>
 		{/each}
 
-		<!-- Score summary — right-aligned so the total lands under the +/- column it sums -->
-		<div class="score-summary">
-			<span class="score-line-text positive">+{scoreResult.positiveTotal}</span>
-			<span class="score-line-text negative">{scoreResult.negativeTotal}</span>
-			<span class="score-line-text total">= {scoreResult.totalScore}</span>
+		<!-- Totals footer — each total sits under the zone it sums: penalties, scored, then total under +/− -->
+		<div class="summary-row" role="group" aria-label="Score">
+			<span class="row-label"></span>
+			<div class="stat" style:width="calc(var(--cell) * {MAX_PENALTY_DISPLAY})">
+				<span class="stat-label">Penalties</span>
+				<span class="stat-value" class:negative={scoreResult.negativeTotal < 0}>
+					{formatScore(scoreResult.negativeTotal)}
+				</span>
+			</div>
+			<span class="zone-gap"></span>
+			<div class="stat" style:width="calc(var(--cell) * {SCORING_MULTIPLIERS.length})">
+				<span class="stat-label">Scored</span>
+				<span class="stat-value" class:positive={scoreResult.positiveTotal > 0}>
+					{scoreResult.positiveTotal > 0 ? `+${scoreResult.positiveTotal}` : '0'}
+				</span>
+			</div>
+			<span class="zone-gap"></span>
+			<div class="stat stat-total">
+				<span class="stat-label">Total</span>
+				<span
+					class="stat-value"
+					class:positive={scoreResult.totalScore > 0}
+					class:negative={scoreResult.totalScore < 0}
+				>
+					{formatScore(scoreResult.totalScore)}
+				</span>
+			</div>
 		</div>
 	</div>
 
-	<!-- RIGHT SCORECARD — 5th-die meters. Filling all of them ends the player's game. -->
+	<!-- RIGHT SCORECARD — 5th-die meters in their own tinted panel. Filling all of them ends the player's game. -->
+	<div class="fifth-panel">
 	<div class="fifth-section">
 		<div class="fifth-header">
 			<span class="fifth-title">5th die</span>
@@ -239,6 +267,7 @@
 			{/each}
 		</div>
 	</div>
+	</div>
 
 </div>
 
@@ -267,7 +296,6 @@
 		--sc-header: max(10px, min(calc(11px * var(--sc-k)), calc((var(--cell) - 2px) * 0.54)));
 		--sc-box-label: var(--sc-header);
 		--sc-body: calc(14px * var(--sc-k));
-		--sc-total: calc(24px * var(--sc-k));
 
 		display: flex;
 		flex-direction: column;
@@ -289,11 +317,15 @@
 		padding: var(--space-xs);
 	}
 
-	/* Size to the grid so row highlights stop at the score column */
+	/*
+	 * Size to the grid so row highlights stop at the score column, and centre it so it
+	 * sits over the 5th-die panel when the card is wider than the grid (e.g. tablets)
+	 */
 	.scorecard-section {
 		display: flex;
 		flex-direction: column;
 		width: fit-content;
+		align-self: center;
 	}
 
 	/* Row layout */
@@ -318,8 +350,7 @@
 	.header-penalty {
 		display: flex;
 		align-items: center;
-		justify-content: flex-end;
-		padding-right: var(--space-xs);
+		justify-content: center;
 		white-space: nowrap;
 		flex-shrink: 0;
 	}
@@ -457,6 +488,20 @@
 	 * 5th-die meters — a progress tracker rather than a scoring grid, so marks are
 	 * solid fills in the 5th-die colour instead of X's.
 	 */
+	/* Full-width tinted panel (page tone) sets the section apart without adding more lines */
+	.fifth-panel {
+		display: flex;
+		justify-content: center;
+		/* Narrow side padding so the centred meters still fit 375px phones */
+		padding: var(--space-md) var(--space-sm);
+		background: var(--cream);
+		border-radius: var(--radius-md);
+	}
+
+	.compact .fifth-panel {
+		padding: var(--space-sm);
+	}
+
 	/* Sized to the meters and centred, so header, progress bar, and meters share one width */
 	.fifth-section {
 		align-self: center;
@@ -561,23 +606,72 @@
 	}
 
 
-	/* Score summary */
-	.score-summary {
+	/*
+	 * Totals footer — shares the grid's column widths. A rule over each zone reads like
+	 * the total line on a paper score sheet; all three values are the same size.
+	 */
+	.summary-row {
 		display: flex;
-		gap: var(--space-md);
-		justify-content: flex-end;
-		align-items: baseline;
-		padding: var(--space-sm) var(--space-xs) 0;
-		font-weight: 700;
-		font-size: var(--sc-body);
+		align-items: stretch;
+		margin-top: var(--space-sm);
 	}
 
-	.score-line-text.positive { color: var(--score-positive); }
-	.score-line-text.negative { color: var(--score-negative); }
-	/* The running total is the sheet's headline number */
-	.score-line-text.total {
-		color: var(--sc-text);
-		font-size: var(--sc-total);
+	.summary-row .row-label {
+		height: auto;
+	}
+
+	.stat {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
+		padding-top: var(--space-sm);
+		border-top: 1.5px solid var(--sc-border);
+		flex-shrink: 0;
+	}
+
+	/* Total lines up with the +/− column: same width, right-aligned like the row scores */
+	.stat-total {
+		width: 40px;
+		align-items: flex-end;
+		padding-right: 4px;
+	}
+
+	.stat-label {
+		font-size: var(--sc-header);
+		font-weight: 600;
+		color: var(--text-medium);
+		line-height: 1.2;
+		white-space: nowrap;
+	}
+
+	/* Same size as the row scores; proportional digits so "−110" fits the 40px +/− column */
+	.stat-value {
+		font-variant-numeric: proportional-nums;
+		font-size: var(--sc-body);
 		font-weight: 700;
+		color: var(--sc-text);
+		line-height: 1.2;
+		white-space: nowrap;
+	}
+
+	.stat-value.positive { color: var(--score-positive); }
+	.stat-value.negative { color: var(--score-negative); }
+
+	/*
+	 * Portrait phones: tighter rows and spacing so the whole sheet, totals, and 5th-die
+	 * panel fit on screen without scrolling. Cells are ~22px wide here, so rows go square.
+	 */
+	@media (max-width: 767px) and (orientation: portrait) {
+		.scorecard { gap: var(--space-sm); }
+		.scorecard-row { height: 22px; }
+		.header-row { height: 20px; }
+		.summary-row { margin-top: var(--space-xs); }
+		.stat { padding-top: var(--space-xs); gap: 0; }
+		.fifth-panel { padding: var(--space-sm); }
+		.fifth-section { gap: var(--space-xs); }
+		.fifth-meters { row-gap: var(--space-xs); padding-top: 0; }
+		.fifth-die :global(svg) { width: 16px; height: 16px; }
+		.fifth-box { height: 12px; }
 	}
 </style>

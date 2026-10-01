@@ -245,12 +245,38 @@
 	.scorecard-section { flex: 1; overflow: auto; min-height: 0; container-type: inline-size; }
 
 	/* Desktop: centred board, turn panel left, scorecard sized to its grid on the right */
-	@media (min-width: 1024px) {
+	@media (min-width: 1024px) and (min-height: 501px) {
 		.tabs-row, .game-content { width: 100%; max-width: 1120px; margin-inline: auto; }
-		.game-content { flex-direction: row; gap: var(--space-xl); padding: var(--space-lg); }
-		.dice-section { flex: 1 1 0; min-width: 0; align-self: flex-start; }
+		/* One grid row sized by the scorecard, so the turn panel and scorecard are equal-height cards */
+		.game-content {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			grid-template-rows: fit-content(100%);
+			align-content: start;
+			gap: var(--space-xl);
+			padding: var(--space-lg);
+		}
+		.dice-section {
+			min-height: 0; overflow-y: auto; justify-content: center;
+			padding: var(--space-lg); background: var(--card-bg);
+			border-radius: var(--radius-lg); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+		}
+		/* Combo cards sit on the page colour so they stay distinct inside the panel card */
+		.dice-section :global(.combo-card:not(.selected):not(.invalid)) { background: var(--cream); }
 		/* Cells are already at full size here, so size to content instead */
-		.scorecard-section { flex: 0 0 auto; container-type: normal; }
+		.scorecard-section { container-type: normal; }
+	}
+
+	/*
+	 * Portrait phones: the turn panel fills exactly the space above the scorecard so the
+	 * scorecard never moves between turns; content stacks from the top (dice, then the
+	 * combinations and confirm button). The scorecard is capped so the panel keeps ~200px.
+	 */
+	@media (max-width: 767px) and (orientation: portrait) {
+		.game-content { gap: var(--space-sm); padding: var(--space-sm) var(--space-md) var(--space-md); }
+		.dice-section { flex: 1 1 0; min-height: 0; gap: var(--space-sm); }
+		.selecting-info { flex: 0 1 auto; min-height: 0; gap: var(--space-sm); }
+		.scorecard-section { flex: 0 0 auto; max-height: calc(100% - 200px - var(--space-sm)); }
 	}
 
 	/* Landscape on phones — switch to side-by-side to fit the short viewport height */
