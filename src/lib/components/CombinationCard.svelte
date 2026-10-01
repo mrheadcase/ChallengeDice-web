@@ -64,6 +64,8 @@
 		cursor: pointer;
 		transition: all var(--transition-fast);
 		min-width: fit-content;
+		line-height: var(--line-height-tight);
+		font-variant-numeric: tabular-nums;
 	}
 
 	.combo-card:hover:not(:disabled) {
@@ -111,22 +113,18 @@
 		font-weight: 700;
 	}
 
-	.reason {
-		font-size: 10px;
-		color: var(--score-negative);
-		text-align: center;
-		line-height: 1.2;
-	}
-
-	/* Size variants */
+	/*
+	 * Size variants — sums use the type scale (sm / base / lg / xl); the 5th-die value
+	 * sits two steps below the sums and its label one step below that, floored at 2xs.
+	 */
 	.combo-card.size-small {
 		padding: 4px;
 		gap: 1px;
 		min-width: 60px;
 	}
 	.size-small .pair-sums { font-size: var(--font-size-sm); gap: 2px; }
-	.size-small .fifth { font-size: var(--font-size-xs); }
-	.size-small .fifth-label { font-size: 9px; }
+	.size-small .fifth { font-size: var(--font-size-2xs); }
+	.size-small .fifth-label { font-size: var(--font-size-2xs); }
 
 	.combo-card.size-medium {
 		padding: 6px;
@@ -134,6 +132,7 @@
 	}
 	.size-medium .pair-sums { font-size: var(--font-size-base); }
 	.size-medium .fifth { font-size: var(--font-size-xs); }
+	.size-medium .fifth-label { font-size: var(--font-size-2xs); }
 
 	/* large is the default — no overrides needed */
 

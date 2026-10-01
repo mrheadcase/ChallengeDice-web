@@ -38,14 +38,33 @@
 	--radius-lg: 12px;
 	--radius-xl: 16px;
 
-	/* Typography */
+	/*
+	 * Typography — 1.25 (major third) scale on a 16px base. 2xs (11px) is the floor:
+	 * no UI text goes below it. Weights in use: 400 regular, 600 labels/UI,
+	 * 700 numbers/emphasis.
+	 */
 	--font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	--font-size-2xs: 0.6875rem;
 	--font-size-xs: 0.75rem;
 	--font-size-sm: 0.875rem;
 	--font-size-base: 1rem;
 	--font-size-lg: 1.25rem;
 	--font-size-xl: 1.5rem;
 	--font-size-2xl: 2rem;
+
+	/* Line heights paired with each size, snapped to the 4px grid */
+	--line-height-2xs: 0.75rem;
+	--line-height-xs: 1rem;
+	--line-height-sm: 1.25rem;
+	--line-height-base: 1.5rem;
+	--line-height-lg: 1.75rem;
+	--line-height-xl: 2rem;
+	--line-height-2xl: 2.5rem;
+	/* Single-line numbers inside compact controls (combo cards, badges) */
+	--line-height-tight: 1.2;
+
+	/* Uppercase badges only (AI, OUT) */
+	--letter-spacing-wide: 0.04em;
 
 	/* Transitions */
 	--transition-fast: 150ms ease;
@@ -67,17 +86,13 @@
 	--btn-tertiary-border: #C4B496;
 
 	/* Scorecard colors */
-	--sc-header-bg: #E0E0E0;
 	--sc-border: #444444;
-	--sc-divider: #000000;
 	--sc-text: #1A1A1A;
-	--sc-penalty-bg: #FFEBEE;
-	--sc-scoring-bg: #E3F2FD;
 	--sc-filled-bg: #D0D0D0;
-	--sc-filled-text: #999999;
 	--sc-hint-color: #5C8DB8;
 	--sc-mark-scored: #1565C0;
 	--sc-mark-penalty: #C62828;
+	--sc-near-text: #8A5300;
 }
 
 /* Reset */
@@ -172,17 +187,13 @@ a {
 	--btn-tertiary-border: #6B4A2A;
 
 	/* Scorecard colors for dark mode */
-	--sc-header-bg: #3A2A1A;
 	--sc-border: #6B4A2A;
-	--sc-divider: #8B6B4A;
 	--sc-text: #FAF6F0;
-	--sc-penalty-bg: #3A1A1A;
-	--sc-scoring-bg: #1A2A3A;
 	--sc-filled-bg: #2A1E14;
-	--sc-filled-text: #7A6A5A;
 	--sc-hint-color: #7AAFDB;
 	--sc-mark-scored: #90CAF9;
 	--sc-mark-penalty: #EF9A9A;
+	--sc-near-text: #FFB74D;
 	color-scheme: dark;
 }
 

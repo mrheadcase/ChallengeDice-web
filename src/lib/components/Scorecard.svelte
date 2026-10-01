@@ -10,6 +10,7 @@
 		PLAYER_COLORS,
 	} from '$lib/game/constants';
 	import { preferences, type ScorecardTextSize } from '$lib/stores/preferences.svelte';
+	import DiceView from './DiceView.svelte';
 
 	interface Props {
 		scorecard: ScorecardType;
@@ -36,18 +37,15 @@
 		return `color-mix(in srgb, ${color} 15%, transparent)`;
 	}
 
-	// Text size configs matching Android ScorecardView.kt
-	const TEXT_SIZE_MAP: Record<ScorecardTextSize, {
-		boxLabel: string; header: string; rowNumber: string;
-		score: string; mark: string; summary: string; summaryLarge: string;
-	}> = {
-		small:       { boxLabel: '7px',  header: '9px',  rowNumber: '11px', score: '10px', mark: '11px', summary: '11px', summaryLarge: '12px' },
-		medium:      { boxLabel: '8px',  header: '10px', rowNumber: '12px', score: '11px', mark: '12px', summary: '12px', summaryLarge: '13px' },
-		large:       { boxLabel: '9px',  header: '11px', rowNumber: '13px', score: '12px', mark: '13px', summary: '13px', summaryLarge: '14px' },
-		extra_large: { boxLabel: '10px', header: '12px', rowNumber: '14px', score: '13px', mark: '14px', summary: '14px', summaryLarge: '15px' },
+	// One multiplier per text-size preference, applied to every scorecard text role
+	const TEXT_SCALE: Record<ScorecardTextSize, number> = {
+		small: 0.85,
+		medium: 0.92,
+		large: 1,
+		extra_large: 1.15,
 	};
 
-	let textSize = $derived(TEXT_SIZE_MAP[preferences.current.scorecardTextSize]);
+	let textScale = $derived(TEXT_SCALE[preferences.current.scorecardTextSize]);
 
 	let scoreResult = $derived(calculateScore(scorecard));
 	let colorScheme = $derived(PLAYER_COLORS[playerColor]);
@@ -97,32 +95,30 @@
 		return marks > 0 && marks === config.penaltyBoxCount;
 	}
 
+	const RIGHT_SCORECARD_TOTAL = RIGHT_SCORECARD_ROWS.length * RIGHT_SCORECARD_BOXES_PER_ROW;
+
+	let rightMarkTotal = $derived(
+		RIGHT_SCORECARD_ROWS.reduce((sum, v) => sum + Math.min(scorecard.rightMarks[v] ?? 0, RIGHT_SCORECARD_BOXES_PER_ROW), 0)
+	);
+
 	function isRightRowFull(dieValue: number): boolean {
 		return (scorecard.rightMarks[dieValue] ?? 0) >= RIGHT_SCORECARD_BOXES_PER_ROW;
 	}
 </script>
 
-<div class="scorecard" class:compact
-	style:--sc-box-label={textSize.boxLabel}
-	style:--sc-header={textSize.header}
-	style:--sc-row-number={textSize.rowNumber}
-	style:--sc-score={textSize.score}
-	style:--sc-mark={textSize.mark}
-	style:--sc-summary={textSize.summary}
-	style:--sc-summary-lg={textSize.summaryLarge}
->
+<div class="scorecard" class:compact style:--sc-scale={textScale}>
 	<!-- LEFT SCORECARD -->
 	<div class="scorecard-section">
-		<!-- Header row -->
+		<!-- Header row — quiet zone labels; the penalty label ends at the zone's right edge -->
 		<div class="scorecard-row header-row">
-			<span class="row-label header-cell">#</span>
-			<span class="header-penalty" style:width="calc(var(--cell) * {MAX_PENALTY_DISPLAY})">-10</span>
-			<span class="scoring-line"></span>
+			<span class="row-label"></span>
+			<span class="header-penalty" style:width="calc(var(--cell) * {MAX_PENALTY_DISPLAY})">Penalty −10</span>
+			<span class="zone-gap"></span>
 			{#each SCORING_MULTIPLIERS as mult}
-				<span class="header-mult">{mult}x</span>
+				<span class="header-mult">{mult}×</span>
 			{/each}
-			<span class="score-line"></span>
-			<span class="header-score">+/-</span>
+			<span class="zone-gap"></span>
+			<span class="header-score">+/−</span>
 		</div>
 
 		{#each LEFT_SCORECARD_CONFIG as config}
@@ -130,9 +126,12 @@
 			{@const score = calculateRowScore(config.rowNumber, marks)}
 			{@const nearScoring = rowIsNearScoring(config.rowNumber)}
 			{@const emptySlots = MAX_PENALTY_DISPLAY - config.penaltyBoxCount}
+			{@const previewColor = getPreviewColor(config.rowNumber)}
+			<!-- Latest mark in the scoring zone — the multiplier this row is currently scoring at -->
+			{@const currentIdx = marks > config.penaltyBoxCount ? marks - 1 : -1}
 			<div class="scorecard-row" class:near-scoring={nearScoring}>
-				<span class="row-label" class:near-scoring-label={nearScoring}>{config.rowNumber}</span>
-				<!-- Empty spacer slots for alignment -->
+				<span class="row-label">{config.rowNumber}</span>
+				<!-- Empty slots keep columns aligned; left blank so the penalty zone reads as a staircase -->
 				{#each { length: emptySlots } as _}
 					<span class="box spacer-box"></span>
 				{/each}
@@ -140,14 +139,14 @@
 				{#each { length: config.penaltyBoxCount } as _, boxIdx}
 					{@const filled = isBoxFilled(config.rowNumber, boxIdx)}
 					{@const preview = isPreviewBox(config.rowNumber, boxIdx)}
-					{@const previewColor = getPreviewColor(config.rowNumber)}
 					<span
 						class="box penalty-box"
+						class:zone-start={boxIdx === 0}
+						class:zone-end={boxIdx === config.penaltyBoxCount - 1}
 						class:filled
 						class:preview
-						style:background-color={preview && previewColor
-							? previewTint(previewColor)
-							: undefined}
+						style:background-color={preview && previewColor ? previewTint(previewColor) : undefined}
+						style:border-color={preview && previewColor ? previewColor : undefined}
 					>
 						{#if filled}
 							<span class="mark" style:color={PENALTY_MARK_COLOR}>X</span>
@@ -156,24 +155,27 @@
 						{/if}
 					</span>
 				{/each}
-				<!-- Scoring line divider -->
-				<span class="scoring-line"></span>
+				<span class="zone-gap"></span>
 				<!-- Scoring boxes -->
 				{#each SCORING_MULTIPLIERS as mult, mi}
 					{@const boxIdx = config.penaltyBoxCount + mi}
 					{@const filled = isBoxFilled(config.rowNumber, boxIdx)}
 					{@const preview = isPreviewBox(config.rowNumber, boxIdx)}
-					{@const previewColor = getPreviewColor(config.rowNumber)}
 					<span
 						class="box scoring-box"
+						class:zone-start={mi === 0}
+						class:zone-end={mi === SCORING_MULTIPLIERS.length - 1}
+						class:current={boxIdx === currentIdx}
 						class:filled
 						class:preview
-						style:background-color={preview && previewColor
-							? previewTint(previewColor)
-							: undefined}
-						title="{config.baseValue} x {mult} = {config.baseValue * mult}"
+						style:background-color={preview && previewColor ? previewTint(previewColor) : undefined}
+						style:border-color={preview && previewColor ? previewColor : undefined}
+						title="{config.baseValue} × {mult} = {config.baseValue * mult}"
 					>
-						{#if filled}
+						{#if filled && boxIdx === currentIdx}
+							<!-- The latest mark shows the value the row is scoring, rather than an X -->
+							<span class="current-value">{config.baseValue * mult}</span>
+						{:else if filled}
 							<span class="mark" style:color={MARKED_COLOR}>X</span>
 						{:else if preview}
 							<span class="mark preview-mark" style:color={previewColor}>X</span>
@@ -182,8 +184,7 @@
 						{/if}
 					</span>
 				{/each}
-				<!-- Score divider -->
-				<span class="score-line"></span>
+				<span class="zone-gap"></span>
 				<span class="row-score" class:positive={score > 0} class:negative={score < 0}>
 					{score !== 0 ? score : ''}
 				</span>
@@ -198,41 +199,45 @@
 		</div>
 	</div>
 
-	<!-- RIGHT SCORECARD -->
-	<div class="scorecard-section right-section">
-		<div class="section-header">
-			<span class="row-label header-cell">Die</span>
-			{#each { length: RIGHT_SCORECARD_BOXES_PER_ROW } as _, i}
-				<span class="header-mult">{i + 1}</span>
-			{/each}
+	<!-- RIGHT SCORECARD — 5th-die meters. Filling all of them ends the player's game. -->
+	<div class="fifth-section">
+		<div class="fifth-header">
+			<span class="fifth-title">5th die</span>
+			<span class="fifth-count" title="Your game ends when all {RIGHT_SCORECARD_TOTAL} boxes are marked">
+				{rightMarkTotal} / {RIGHT_SCORECARD_TOTAL}
+			</span>
+		</div>
+		<div class="fifth-progress" aria-hidden="true">
+			<div class="fifth-progress-fill" style:width="{(rightMarkTotal / RIGHT_SCORECARD_TOTAL) * 100}%"></div>
 		</div>
 
-		{#each RIGHT_SCORECARD_ROWS as dieValue}
-			{@const marks = scorecard.rightMarks[dieValue] ?? 0}
-			{@const full = isRightRowFull(dieValue)}
-			<div class="scorecard-row" class:filled-row={full}>
-				<span class="row-label">{dieValue}</span>
-				{#each { length: RIGHT_SCORECARD_BOXES_PER_ROW } as _, boxIdx}
-					{@const filled = isRightBoxFilled(dieValue, boxIdx)}
-					{@const preview = isRightPreviewBox(dieValue, boxIdx)}
-					<span
-						class="box"
-						class:filled
-						class:preview
-						class:filled-row-box={full && !preview}
-						style:background-color={preview
-							? previewTint(PREVIEW_FIFTH)
-							: undefined}
-					>
-						{#if filled}
-							<span class="mark" style:color={MARKED_COLOR}>X</span>
-						{:else if preview}
-							<span class="mark preview-mark" style:color={PREVIEW_FIFTH}>X</span>
-						{/if}
+		<div class="fifth-meters">
+			{#each RIGHT_SCORECARD_ROWS as dieValue}
+				{@const marks = scorecard.rightMarks[dieValue] ?? 0}
+				{@const full = isRightRowFull(dieValue)}
+				{@const almostFull = marks === RIGHT_SCORECARD_BOXES_PER_ROW - 1}
+				<div
+					class="fifth-meter"
+					class:full
+					class:almost-full={almostFull}
+					role="img"
+					aria-label="5th die {dieValue}: {marks} of {RIGHT_SCORECARD_BOXES_PER_ROW} marked{full ? ', full' : ''}"
+				>
+					<span class="fifth-die">
+						<DiceView value={dieValue} size={compact ? 16 : 20} />
 					</span>
-				{/each}
-			</div>
-		{/each}
+					<span class="fifth-boxes">
+						{#each { length: RIGHT_SCORECARD_BOXES_PER_ROW } as _, boxIdx}
+							<span
+								class="fifth-box"
+								class:filled={isRightBoxFilled(dieValue, boxIdx)}
+								class:preview={isRightPreviewBox(dieValue, boxIdx)}
+							></span>
+						{/each}
+					</span>
+				</div>
+			{/each}
+		</div>
 	</div>
 
 </div>
@@ -240,12 +245,30 @@
 <style>
 	/*
 	 * Cell width shrinks with the available width so the full sheet (label + 11 boxes +
-	 * dividers + score column) fits a phone screen. 99px = 16px padding + 28px label
-	 * + 5px dividers + 44px score column + 6px scrollbar. cqi falls back to viewport
+	 * zone gaps + score column) fits a phone screen. 98px = 16px padding + 24px label
+	 * + 12px zone gaps + 40px score column + 6px scrollbar. cqi falls back to viewport
 	 * width when no ancestor is a size container.
 	 */
 	.scorecard {
-		--cell: clamp(20px, calc((100cqi - 99px) / 11), 28px);
+		--cell: clamp(20px, calc((100cqi - 98px) / 11), 28px);
+		/* Hairline grid and pale zone tints derived from the mark colours, so both themes follow */
+		--sc-grid-line: color-mix(in srgb, var(--sc-border) 40%, transparent);
+		--sc-penalty-tint: color-mix(in srgb, var(--sc-mark-penalty) 12%, var(--card-bg));
+		--sc-scoring-tint: color-mix(in srgb, var(--sc-mark-scored) 12%, var(--card-bg));
+		--sc-zone-radius: 4px;
+
+		/*
+		 * Text roles — sizes from the type scale (px, since they're bound to fixed
+		 * cells) times the preference multiplier and density. Header labels and
+		 * in-box point values are also capped so "100" and "10x" (~1.85em wide in
+		 * proportional digits) fit narrow phone cells, and never drop below 10px.
+		 */
+		--sc-k: calc(var(--sc-scale, 1) * var(--sc-density, 1));
+		--sc-header: max(10px, min(calc(11px * var(--sc-k)), calc((var(--cell) - 2px) * 0.54)));
+		--sc-box-label: var(--sc-header);
+		--sc-body: calc(14px * var(--sc-k));
+		--sc-total: calc(24px * var(--sc-k));
+
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-lg);
@@ -254,12 +277,14 @@
 		border-radius: var(--radius-lg);
 		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 		overflow: auto;
-		font-size: 13px;
+		font-size: var(--sc-body);
+		/* Equal-width digits keep the score column and totals aligned */
+		font-variant-numeric: tabular-nums;
 	}
 
 	.scorecard.compact {
 		--cell: 22px;
-		font-size: 11px;
+		--sc-density: 0.85;
 		gap: var(--space-sm);
 		padding: var(--space-xs);
 	}
@@ -282,62 +307,41 @@
 		height: 22px;
 	}
 
-	/* Header row */
+	/* Header row — plain labels, no fills */
 	.header-row {
 		height: 24px;
 		font-size: var(--sc-header);
-		font-weight: 700;
-		color: var(--sc-text);
-	}
-
-	.header-cell {
-		background: var(--sc-header-bg);
+		font-weight: 600;
+		color: var(--text-medium);
 	}
 
 	.header-penalty {
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		height: 100%;
-		background: var(--sc-header-bg);
-		border: 0.5px solid var(--sc-border);
-		font-weight: 700;
-		font-size: var(--sc-header);
-		color: var(--sc-text);
+		justify-content: flex-end;
+		padding-right: var(--space-xs);
+		white-space: nowrap;
 		flex-shrink: 0;
 	}
 
 	.header-mult {
+		font-variant-numeric: proportional-nums;
 		width: var(--cell);
-		height: 100%;
 		display: flex;
-		align-items: center;
 		justify-content: center;
-		background: var(--sc-header-bg);
-		border: 0.5px solid var(--sc-border);
-		font-weight: 700;
-		font-size: var(--sc-header);
-		color: var(--sc-text);
 		flex-shrink: 0;
 	}
 
 	.header-score {
-		width: 44px;
-		height: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: var(--sc-header-bg);
-		border: 0.5px solid var(--sc-border);
-		font-weight: 700;
-		font-size: var(--sc-header);
-		color: var(--sc-text);
+		width: 40px;
+		text-align: right;
+		padding-right: var(--space-xs);
 		flex-shrink: 0;
 	}
 
 	/* Row labels */
 	.row-label {
-		width: 28px;
+		width: 24px;
 		height: 100%;
 		display: flex;
 		align-items: center;
@@ -345,42 +349,30 @@
 		font-weight: 700;
 		flex-shrink: 0;
 		color: var(--sc-text);
-		background: var(--sc-header-bg);
-		border: 0.5px solid var(--sc-border);
-		font-size: var(--sc-row-number);
+		font-size: var(--sc-body);
 	}
 
-	.row-label.near-scoring-label {
-		border: 1.5px solid #FFA726;
-		color: #FFA726;
-		background: rgba(255, 167, 38, 0.2);
-	}
-
-	/* Scoring and penalty dividers */
-	.scoring-line {
-		width: 2px;
-		height: 100%;
-		background: var(--sc-divider);
+	/* Space, not rules, separates penalty zone / scoring zone / score column */
+	.zone-gap {
+		width: 6px;
 		flex-shrink: 0;
 	}
 
-	.score-line {
-		width: 3px;
-		height: 100%;
-		background: var(--sc-divider);
-		flex-shrink: 0;
-	}
-
-	/* Near-scoring row highlight */
+	/* Almost scoring: amber band across the row, same cue as the 5th-die meters */
 	.scorecard-row.near-scoring {
-		background: rgba(255, 167, 38, 0.1);
+		background: rgba(255, 167, 38, 0.16);
+		border-radius: var(--sc-zone-radius);
+	}
+
+	.near-scoring .row-label {
+		color: var(--sc-near-text);
 	}
 
 	/* Boxes */
 	.box {
 		width: var(--cell);
 		height: 100%;
-		border: 0.5px solid var(--sc-border);
+		border: 0.5px solid var(--sc-grid-line);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -389,43 +381,50 @@
 	}
 
 	.box.spacer-box {
-		background: var(--sc-header-bg);
-		border-color: var(--sc-border);
+		border-color: transparent;
 	}
 
 	.box.penalty-box {
-		background: var(--sc-penalty-bg);
+		background: var(--sc-penalty-tint);
 	}
 
 	.box.scoring-box {
-		background: var(--sc-scoring-bg);
+		background: var(--sc-scoring-tint);
 	}
 
-	/* filled boxes keep their zone background, just show colored X text */
+	/* Each zone reads as one rounded strip per row */
+	.box.zone-start {
+		border-top-left-radius: var(--sc-zone-radius);
+		border-bottom-left-radius: var(--sc-zone-radius);
+	}
+
+	.box.zone-end {
+		border-top-right-radius: var(--sc-zone-radius);
+		border-bottom-right-radius: var(--sc-zone-radius);
+	}
+
+	/* Current scoring level: the latest mark in the scoring zone, showing its value */
+	.scoring-box.current {
+		box-shadow: inset 0 0 0 1.5px var(--sc-mark-scored);
+	}
+
+	.current-value {
+		font-variant-numeric: proportional-nums;
+		font-size: var(--sc-box-label);
+		font-weight: 700;
+		color: var(--sc-mark-scored);
+		line-height: 1;
+	}
 
 	.box.preview {
 		border-style: dashed;
 		border-width: 1.5px;
 	}
 
-	/* Right scorecard boxes */
-	.right-section .box {
-		background: var(--card-bg);
-	}
-
-	.filled-row .row-label {
-		color: var(--sc-filled-text);
-		text-decoration: line-through;
-	}
-
-	.filled-row-box {
-		background: var(--sc-filled-bg) !important;
-	}
-
 	/* Marks */
 	.mark {
-		font-weight: 800;
-		font-size: var(--sc-mark);
+		font-weight: 700;
+		font-size: var(--sc-body);
 		line-height: 1;
 	}
 
@@ -433,33 +432,134 @@
 		opacity: 0.7;
 	}
 
+	/* Proportional digits — "100" is ~8% narrower, and in-cell values don't need column alignment */
 	.multiplier-hint {
+		font-variant-numeric: proportional-nums;
 		font-size: var(--sc-box-label);
-		color: var(--sc-hint-color);
+		color: color-mix(in srgb, var(--sc-hint-color) 70%, transparent);
 		font-weight: 600;
 	}
 
 	/* Row score */
 	.row-score {
-		width: 44px;
+		width: 40px;
 		text-align: right;
 		font-weight: 700;
 		flex-shrink: 0;
 		padding-right: 4px;
-		font-size: var(--sc-score);
+		font-size: var(--sc-body);
 	}
 
 	.row-score.positive { color: var(--score-positive); }
 	.row-score.negative { color: var(--score-negative); }
 
-	/* Right section header */
-	.section-header {
+	/*
+	 * 5th-die meters — a progress tracker rather than a scoring grid, so marks are
+	 * solid fills in the 5th-die colour instead of X's.
+	 */
+	/* Sized to the meters and centred, so header, progress bar, and meters share one width */
+	.fifth-section {
+		align-self: center;
+		width: fit-content;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.fifth-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		color: var(--sc-text);
+	}
+
+	.fifth-title {
+		font-weight: 600;
+		font-size: var(--sc-body);
+	}
+
+	.fifth-count {
+		font-weight: 600;
+		font-size: var(--sc-header);
+		color: var(--text-medium);
+	}
+
+	.fifth-progress {
+		height: 4px;
+		border-radius: 2px;
+		background: var(--sc-filled-bg);
+		overflow: hidden;
+	}
+
+	.fifth-progress-fill {
+		height: 100%;
+		background: var(--combo-fifth);
+		transition: width var(--transition-normal);
+	}
+
+	/* Fills down each column: 1–3 on the left, 4–6 on the right */
+	.fifth-meters {
+		display: grid;
+		grid-template-columns: repeat(2, auto);
+		grid-template-rows: repeat(3, auto);
+		grid-auto-flow: column;
+		gap: var(--space-sm) var(--space-xl);
+		padding-top: var(--space-xs);
+	}
+
+	.fifth-meter {
 		display: flex;
 		align-items: center;
-		height: 24px;
-		font-size: var(--sc-header);
-		font-weight: 700;
+		gap: var(--space-sm);
+		padding: 2px;
+		border: 1px solid transparent;
+		border-radius: var(--radius-sm);
 	}
+
+	/* Same amber "almost there" cue as near-scoring rows on the left grid */
+	.fifth-meter.almost-full {
+		border-color: #FFA726;
+		background: rgba(255, 167, 38, 0.1);
+	}
+
+	.fifth-meter.full .fifth-die {
+		opacity: 0.4;
+	}
+
+	.fifth-boxes {
+		display: flex;
+		gap: 3px;
+	}
+
+	/* Shrinks with the sheet's cells so the meters still fit narrow phones */
+	.fifth-box {
+		width: min(24px, var(--cell));
+		height: 14px;
+		border-radius: 3px;
+		border: 1px solid var(--sc-border);
+		background: var(--card-bg);
+		transition: background-color var(--transition-fast);
+	}
+
+	.compact .fifth-box {
+		width: 20px;
+		height: 12px;
+	}
+
+	.fifth-box.filled {
+		background: var(--combo-fifth);
+		border-color: var(--combo-fifth);
+	}
+
+	.fifth-meter.full .fifth-box.filled {
+		opacity: 0.5;
+	}
+
+	.fifth-box.preview {
+		border: 1.5px dashed var(--combo-fifth);
+		background: color-mix(in srgb, var(--combo-fifth) 25%, transparent);
+	}
+
 
 	/* Score summary */
 	.score-summary {
@@ -469,7 +569,7 @@
 		align-items: baseline;
 		padding: var(--space-sm) var(--space-xs) 0;
 		font-weight: 700;
-		font-size: var(--sc-summary);
+		font-size: var(--sc-body);
 	}
 
 	.score-line-text.positive { color: var(--score-positive); }
@@ -477,7 +577,7 @@
 	/* The running total is the sheet's headline number */
 	.score-line-text.total {
 		color: var(--sc-text);
-		font-size: calc(var(--sc-summary-lg) * 1.5);
-		font-weight: 800;
+		font-size: var(--sc-total);
+		font-weight: 700;
 	}
 </style>

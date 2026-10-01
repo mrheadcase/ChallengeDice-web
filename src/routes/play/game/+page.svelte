@@ -254,6 +254,8 @@
 
 	.round-label {
 		font-weight: 700;
+		font-size: var(--font-size-base);
+		line-height: var(--line-height-base);
 		color: inherit;
 	}
 
@@ -284,6 +286,7 @@
 		font-weight: 600;
 		color: var(--text-medium);
 		font-size: var(--font-size-sm);
+		line-height: var(--line-height-sm);
 		margin-bottom: var(--space-sm);
 	}
 
@@ -311,7 +314,8 @@
 	.score-hint {
 		color: var(--text-medium);
 		font-size: var(--font-size-sm);
-		font-weight: 500;
+		line-height: var(--line-height-sm);
+		font-weight: 400;
 		text-align: center;
 	}
 

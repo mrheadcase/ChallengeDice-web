@@ -249,7 +249,7 @@
 		left: 0;
 		text-align: center;
 		font-size: var(--font-size-xs);
-		font-weight: 700;
+		font-weight: 600;
 		line-height: 1;
 		white-space: nowrap;
 	}

@@ -207,7 +207,7 @@
 		color: var(--light-gold); font-weight: 600; font-size: var(--font-size-sm);
 		padding: 6px 12px; border-radius: var(--radius-md);
 	}
-	.round-label { font-weight: 700; color: inherit; }
+	.round-label { font-weight: 700; font-size: var(--font-size-base); line-height: var(--line-height-base); color: inherit; }
 	.disconnected-info {
 		font-size: var(--font-size-xs); color: #FFA726; font-style: italic;
 	}
@@ -223,7 +223,7 @@
 	}
 
 	.roll-prompt, .waiting-prompt { text-align: center; }
-	.roll-prompt p, .waiting-prompt p { color: var(--text-medium); margin-bottom: 12px; font-weight: 600; }
+	.roll-prompt p, .waiting-prompt p { color: var(--text-medium); line-height: var(--line-height-base); margin-bottom: var(--space-sm); font-weight: 600; }
 
 	.roll-btn {
 		background: var(--btn-primary-bg); color: var(--btn-primary-text); padding: 14px 40px;
@@ -232,14 +232,14 @@
 	.roll-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 	.selecting-info { width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--space-md); }
-	.selecting-label { font-weight: 600; color: var(--text-medium); font-size: var(--font-size-sm); }
+	.selecting-label { font-weight: 600; color: var(--text-medium); font-size: var(--font-size-sm); line-height: var(--line-height-sm); }
 
 	.confirm-btn {
 		background: var(--score-positive); color: white; padding: 12px 32px;
 		border-radius: var(--radius-lg); font-weight: 700;
 	}
 
-	.finished-count { font-size: var(--font-size-sm); color: var(--text-muted); }
+	.finished-count { font-size: var(--font-size-sm); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
 	/* Size container so the scorecard's cells can scale to the space it gets */
 	.scorecard-section { flex: 1; overflow: auto; min-height: 0; container-type: inline-size; }
@@ -268,7 +268,7 @@
 		}
 		.scorecard-section { flex: 1 1 50%; }
 		.selecting-info { gap: var(--space-sm); }
-		.roll-prompt p, .waiting-prompt p { margin-bottom: 6px; }
+		.roll-prompt p, .waiting-prompt p { margin-bottom: var(--space-xs); }
 		.roll-btn { padding: 8px 24px; font-size: var(--font-size-base); }
 		.confirm-btn { padding: 8px 20px; }
 	}

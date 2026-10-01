@@ -121,6 +121,7 @@
 		text-align: center;
 		font-size: var(--font-size-sm);
 		font-weight: 600;
+		line-height: var(--line-height-sm);
 		color: var(--score-negative);
 		background: var(--cream);
 		padding: 2px 12px;

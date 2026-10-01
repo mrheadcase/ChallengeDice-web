@@ -96,7 +96,9 @@
 	}
 
 	.ai-badge {
-		font-size: 10px;
+		font-size: var(--font-size-2xs);
+		letter-spacing: var(--letter-spacing-wide);
+		line-height: var(--line-height-tight);
 		background: var(--text-muted);
 		color: white;
 		padding: 1px 4px;
@@ -108,13 +110,16 @@
 	.player-score {
 		font-weight: 700;
 		font-size: var(--font-size-sm);
+		font-variant-numeric: tabular-nums;
 	}
 
 	.player-score.positive { color: var(--score-positive); }
 	.player-score.negative { color: var(--score-negative); }
 
 	.eliminated-badge {
-		font-size: 10px;
+		font-size: var(--font-size-2xs);
+		letter-spacing: var(--letter-spacing-wide);
+		line-height: var(--line-height-tight);
 		background: var(--score-negative);
 		color: white;
 		padding: 1px 4px;
