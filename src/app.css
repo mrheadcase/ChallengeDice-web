@@ -20,6 +20,11 @@
 	--score-positive: #2E7D32;
 	--score-negative: #C62828;
 
+	/* Dice combination roles — pair 1 / pair 2 / 5th die */
+	--combo-pair1: #1565C0;
+	--combo-pair2: #2E7D32;
+	--combo-fifth: #E65100;
+
 	/* Spacing */
 	--space-xs: 4px;
 	--space-sm: 8px;
@@ -71,6 +76,8 @@
 	--sc-filled-bg: #D0D0D0;
 	--sc-filled-text: #999999;
 	--sc-hint-color: #5C8DB8;
+	--sc-mark-scored: #1565C0;
+	--sc-mark-penalty: #C62828;
 }
 
 /* Reset */
@@ -145,6 +152,11 @@ a {
 	--score-positive: #81C784;
 	--score-negative: #EF5350;
 
+	/* Lighter combination roles so they stay legible on dark surfaces */
+	--combo-pair1: #64B5F6;
+	--combo-pair2: #81C784;
+	--combo-fifth: #FFB74D;
+
 	--card-bg: #2B1A0E;
 	--card-border: #4A2C10;
 	--input-bg: #3A1E08;
@@ -169,6 +181,8 @@ a {
 	--sc-filled-bg: #2A1E14;
 	--sc-filled-text: #7A6A5A;
 	--sc-hint-color: #7AAFDB;
+	--sc-mark-scored: #90CAF9;
+	--sc-mark-penalty: #EF9A9A;
 	color-scheme: dark;
 }
 

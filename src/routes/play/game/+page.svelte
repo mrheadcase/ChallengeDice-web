@@ -2,6 +2,7 @@
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { MediaQuery } from 'svelte/reactivity';
 	import { localGame } from '$lib/stores/localGame.svelte';
 	import DiceDisplay from '$lib/components/DiceDisplay.svelte';
 	import CombinationGrid from '$lib/components/CombinationGrid.svelte';
@@ -21,6 +22,10 @@
 	let pendingGameOver = $state(false);
 	let autoRolledRound = $state(-1);
 	let showSettings = $state(false);
+
+	// Desktop two-column layout has room for larger dice (excludes short landscape phones)
+	const wideLayout = new MediaQuery('(min-width: 1024px) and (min-height: 501px)');
+	let diceSize = $derived(wideLayout.current ? 68 : 56);
 
 	let gameState = $derived(localGame.gameState);
 	let currentPlayer = $derived(gameState.players[gameState.currentPlayerIndex]);
@@ -142,11 +147,13 @@
 		</div>
 	</div>
 
-	<PlayerTabs
-		players={gameState.players}
-		activeIndex={viewingPlayerIndex}
-		onselect={(i) => { viewingPlayerIndex = i; }}
-	/>
+	<div class="tabs-row">
+		<PlayerTabs
+			players={gameState.players}
+			activeIndex={viewingPlayerIndex}
+			onselect={(i) => { viewingPlayerIndex = i; }}
+		/>
+	</div>
 
 	<div class="game-content">
 		<div class="dice-section">
@@ -165,7 +172,7 @@
 
 			{#if gameState.diceValues.length > 0}
 				<div class="center-block">
-					<DiceDisplay diceValues={gameState.diceValues} {rolling} selectedCombination={selectedCombo} />
+					<DiceDisplay diceValues={gameState.diceValues} {rolling} {diceSize} selectedCombination={selectedCombo} />
 				</div>
 			{/if}
 
@@ -179,9 +186,11 @@
 				/>
 				{#if !localGame.isCurrentPlayerAI()}
 					<div class="score-bar">
-						<button class="score-btn" onclick={scoreIt} disabled={!selectedCombo}>
-							{selectedCombo ? 'Score It' : 'Select a combination'}
-						</button>
+						{#if selectedCombo}
+							<button class="score-btn" onclick={scoreIt}>Score It</button>
+						{:else}
+							<p class="score-hint">Tap a combination to preview it on your scorecard</p>
+						{/if}
 					</div>
 				{/if}
 			{/if}
@@ -221,7 +230,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 8px 16px;
+		padding: var(--space-sm) var(--space-md);
 		background: #1A0D04;
 		color: #F0E8D8;
 	}
@@ -248,18 +257,21 @@
 		color: inherit;
 	}
 
+	/* Outer margin + gap between the turn panel and the scorecard */
 	.game-content {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
+		gap: var(--space-md);
+		padding: var(--space-md);
 		overflow: hidden;
 	}
 
+	/* Larger gaps between the turn steps: status → dice → combinations → Score It */
 	.dice-section {
-		padding: 8px;
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: var(--space-lg);
 		flex-shrink: 0;
 	}
 
@@ -272,7 +284,7 @@
 		font-weight: 600;
 		color: var(--text-medium);
 		font-size: var(--font-size-sm);
-		margin-bottom: 8px;
+		margin-bottom: var(--space-sm);
 	}
 
 	.roll-btn {
@@ -287,9 +299,19 @@
 	.roll-btn:hover:not(:disabled) { background: var(--mid-brown); }
 	.roll-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+	/* Fixed height so swapping the hint for the button doesn't shift the layout */
 	.score-bar {
 		flex-shrink: 0;
-		padding: 8px 16px;
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.score-hint {
+		color: var(--text-medium);
+		font-size: var(--font-size-sm);
+		font-weight: 500;
 		text-align: center;
 	}
 
@@ -304,50 +326,68 @@
 		width: 100%;
 		max-width: 320px;
 	}
-	.score-btn:hover:not(:disabled) { background: var(--mid-brown); }
-	.score-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+	.score-btn:hover { background: var(--mid-brown); }
 
+	/* Size container so the scorecard's cells can scale to the space it gets */
 	.scorecard-section {
 		flex: 1;
 		overflow: auto;
-		padding: 8px;
 		min-height: 0;
+		container-type: inline-size;
 	}
 
+	/*
+	 * Desktop: a centred board with the turn panel on the left and the scorecard,
+	 * sized to its grid, on the right. The tabs share the same max width so they
+	 * line up with the board edge.
+	 */
 	@media (min-width: 1024px) {
+		.tabs-row,
+		.game-content {
+			width: 100%;
+			max-width: 1120px;
+			margin-inline: auto;
+		}
 		.game-content {
 			flex-direction: row;
+			gap: var(--space-xl);
+			padding: var(--space-lg);
 		}
 		.dice-section {
-			flex: 1 1 50%;
+			flex: 1 1 0;
+			min-width: 0;
+			align-self: flex-start;
 		}
 		.scorecard-section {
-			flex: 1 1 50%;
+			flex: 0 0 auto;
+			/* Cells are already at full size here, so size to content instead */
+			container-type: normal;
 		}
 	}
 
 	/* Landscape on phones — switch to side-by-side to fit the short viewport height */
 	@media (orientation: landscape) and (max-height: 500px) {
-		.top-bar { padding: 4px 12px; }
+		.top-bar { padding: var(--space-xs) var(--space-md); }
 		.round-label { font-size: var(--font-size-sm); }
 		.icon-btn { padding: 4px 8px; }
 
-		.game-content { flex-direction: row; }
+		.game-content {
+			flex-direction: row;
+			gap: var(--space-sm);
+			padding: var(--space-sm);
+		}
 		.dice-section {
-			flex: 0 0 50%;
-			padding: 4px;
-			gap: 4px;
+			flex: 1 1 50%;
+			gap: var(--space-sm);
 			overflow-y: auto;
 			min-height: 0;
 		}
 		.scorecard-section {
-			flex: 0 0 50%;
-			padding: 4px;
+			flex: 1 1 50%;
 		}
 
-		.status-text { margin-bottom: 4px; }
+		.status-text { margin-bottom: var(--space-xs); }
 		.roll-btn { padding: 8px 24px; font-size: var(--font-size-base); }
-		.score-bar { padding: 4px 8px; }
 		.score-btn { padding: 8px 16px; }
 	}
 </style>

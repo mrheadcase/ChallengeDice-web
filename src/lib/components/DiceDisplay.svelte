@@ -29,6 +29,13 @@
 	const PAIR2_COLOR = '#2E7D32'; // green
 	const FIFTH_COLOR = '#E65100'; // orange
 
+	// Caption for each group, anchored to the die that lands in the group's first slot
+	const GROUP_LABELS: Record<number, { text: string; color: string; dice: number }> = {
+		0: { text: 'Pair 1', color: 'var(--combo-pair1)', dice: 2 },
+		2: { text: 'Pair 2', color: 'var(--combo-pair2)', dice: 2 },
+		4: { text: '5th', color: 'var(--combo-fifth)', dice: 1 },
+	};
+
 	function getDiceHighlights(values: number[], combo: DiceCombination | null | undefined): (string | null)[] {
 		if (!combo) return values.map(() => null);
 
@@ -171,6 +178,7 @@
 <div class="dice-row" class:rolling>
 	{#each Array(5) as _, i}
 		{@const highlight = diceHighlights[i]}
+		{@const groupLabel = hasCombo && highlight ? GROUP_LABELS[targetSlots[i]] : undefined}
 		<div
 			class="die-wrapper"
 			class:settled={!rolling || i < settledCount}
@@ -185,27 +193,29 @@
 				borderColor={highlight ?? '#555555'}
 				backgroundColor={highlight ? `color-mix(in srgb, ${highlight} 15%, #FFFFFF)` : '#FFFFFF'}
 			/>
+			{#if groupLabel}
+				<span
+					class="group-label"
+					style:color={groupLabel.color}
+					style:width="{groupLabel.dice * diceSize + (groupLabel.dice - 1) * 8}px"
+				>{groupLabel.text}</span>
+			{/if}
 		</div>
 	{/each}
 </div>
-{#if hasCombo}
-	<div class="dice-legend">
-		<span class="legend-item" style="color: {PAIR1_COLOR}">Pair 1</span>
-		<span class="legend-item" style="color: {PAIR2_COLOR}">Pair 2</span>
-		<span class="legend-item" style="color: {FIFTH_COLOR}">5th</span>
-	</div>
-{/if}
 
 <style>
+	/* Bottom padding always reserves the caption line so selecting a combo doesn't shift the layout */
 	.dice-row {
 		display: flex;
-		gap: 8px;
+		gap: var(--space-sm);
 		justify-content: center;
 		align-items: center;
-		padding: 8px;
+		padding-bottom: var(--space-md);
 	}
 
 	.die-wrapper {
+		position: relative;
 		transition: transform 400ms ease, opacity 300ms ease;
 	}
 
@@ -233,17 +243,14 @@
 		75% { transform: translateY(4px) rotate(5deg); }
 	}
 
-	.dice-legend {
-		display: flex;
-		justify-content: center;
-		gap: 16px;
+	.group-label {
+		position: absolute;
+		top: calc(100% + var(--space-xs));
+		left: 0;
+		text-align: center;
 		font-size: var(--font-size-xs);
 		font-weight: 700;
-	}
-
-	.legend-item {
-		display: flex;
-		align-items: center;
-		gap: 4px;
+		line-height: 1;
+		white-space: nowrap;
 	}
 </style>

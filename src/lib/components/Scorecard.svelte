@@ -8,7 +8,6 @@
 		RIGHT_SCORECARD_ROWS,
 		RIGHT_SCORECARD_BOXES_PER_ROW,
 		PLAYER_COLORS,
-		SCORECARD_COLORS,
 	} from '$lib/game/constants';
 	import { preferences, type ScorecardTextSize } from '$lib/stores/preferences.svelte';
 
@@ -27,8 +26,15 @@
 	}: Props = $props();
 
 	const MAX_PENALTY_DISPLAY = 5;
-	const MARKED_COLOR = '#1565C0';
-	const PENALTY_MARK_COLOR = '#C62828';
+	const MARKED_COLOR = 'var(--sc-mark-scored)';
+	const PENALTY_MARK_COLOR = 'var(--sc-mark-penalty)';
+	const PREVIEW_PAIR1 = 'var(--combo-pair1)';
+	const PREVIEW_PAIR2 = 'var(--combo-pair2)';
+	const PREVIEW_FIFTH = 'var(--combo-fifth)';
+
+	function previewTint(color: string): string {
+		return `color-mix(in srgb, ${color} 15%, transparent)`;
+	}
 
 	// Text size configs matching Android ScorecardView.kt
 	const TEXT_SIZE_MAP: Record<ScorecardTextSize, {
@@ -56,8 +62,8 @@
 
 	function getPreviewColor(rowNumber: number): string | null {
 		if (!previewCombination) return null;
-		if (previewCombination.pair1Sum === rowNumber) return SCORECARD_COLORS.previewPair1;
-		if (previewCombination.pair2Sum === rowNumber) return SCORECARD_COLORS.previewPair2;
+		if (previewCombination.pair1Sum === rowNumber) return PREVIEW_PAIR1;
+		if (previewCombination.pair2Sum === rowNumber) return PREVIEW_PAIR2;
 		return null;
 	}
 
@@ -110,7 +116,7 @@
 		<!-- Header row -->
 		<div class="scorecard-row header-row">
 			<span class="row-label header-cell">#</span>
-			<span class="header-penalty" style:width="{MAX_PENALTY_DISPLAY * (compact ? 22 : 27)}px">-10</span>
+			<span class="header-penalty" style:width="calc(var(--cell) * {MAX_PENALTY_DISPLAY})">-10</span>
 			<span class="scoring-line"></span>
 			{#each SCORING_MULTIPLIERS as mult}
 				<span class="header-mult">{mult}x</span>
@@ -140,7 +146,7 @@
 						class:filled
 						class:preview
 						style:background-color={preview && previewColor
-							? previewColor + '26'
+							? previewTint(previewColor)
 							: undefined}
 					>
 						{#if filled}
@@ -163,7 +169,7 @@
 						class:filled
 						class:preview
 						style:background-color={preview && previewColor
-							? previewColor + '26'
+							? previewTint(previewColor)
 							: undefined}
 						title="{config.baseValue} x {mult} = {config.baseValue * mult}"
 					>
@@ -183,6 +189,13 @@
 				</span>
 			</div>
 		{/each}
+
+		<!-- Score summary — right-aligned so the total lands under the +/- column it sums -->
+		<div class="score-summary">
+			<span class="score-line-text positive">+{scoreResult.positiveTotal}</span>
+			<span class="score-line-text negative">{scoreResult.negativeTotal}</span>
+			<span class="score-line-text total">= {scoreResult.totalScore}</span>
+		</div>
 	</div>
 
 	<!-- RIGHT SCORECARD -->
@@ -208,13 +221,13 @@
 						class:preview
 						class:filled-row-box={full && !preview}
 						style:background-color={preview
-							? SCORECARD_COLORS.previewFifth + '26'
+							? previewTint(PREVIEW_FIFTH)
 							: undefined}
 					>
 						{#if filled}
 							<span class="mark" style:color={MARKED_COLOR}>X</span>
 						{:else if preview}
-							<span class="mark preview-mark" style:color={SCORECARD_COLORS.previewFifth}>X</span>
+							<span class="mark preview-mark" style:color={PREVIEW_FIFTH}>X</span>
 						{/if}
 					</span>
 				{/each}
@@ -222,20 +235,21 @@
 		{/each}
 	</div>
 
-	<!-- SCORE SUMMARY -->
-	<div class="score-summary">
-		<span class="score-line-text positive">+{scoreResult.positiveTotal}</span>
-		<span class="score-line-text negative">{scoreResult.negativeTotal}</span>
-		<span class="score-line-text total">= {scoreResult.totalScore}</span>
-	</div>
 </div>
 
 <style>
+	/*
+	 * Cell width shrinks with the available width so the full sheet (label + 11 boxes +
+	 * dividers + score column) fits a phone screen. 99px = 16px padding + 28px label
+	 * + 5px dividers + 44px score column + 6px scrollbar. cqi falls back to viewport
+	 * width when no ancestor is a size container.
+	 */
 	.scorecard {
+		--cell: clamp(20px, calc((100cqi - 99px) / 11), 28px);
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
-		padding: 8px;
+		gap: var(--space-lg);
+		padding: var(--space-sm);
 		background: var(--card-bg);
 		border-radius: var(--radius-lg);
 		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
@@ -244,21 +258,24 @@
 	}
 
 	.scorecard.compact {
+		--cell: 22px;
 		font-size: 11px;
-		gap: 6px;
-		padding: 4px;
+		gap: var(--space-sm);
+		padding: var(--space-xs);
 	}
 
+	/* Size to the grid so row highlights stop at the score column */
 	.scorecard-section {
 		display: flex;
 		flex-direction: column;
+		width: fit-content;
 	}
 
 	/* Row layout */
 	.scorecard-row {
 		display: flex;
 		align-items: center;
-		height: 27px;
+		height: 28px;
 	}
 
 	.compact .scorecard-row {
@@ -267,7 +284,7 @@
 
 	/* Header row */
 	.header-row {
-		height: 22px;
+		height: 24px;
 		font-size: var(--sc-header);
 		font-weight: 700;
 		color: var(--sc-text);
@@ -291,7 +308,7 @@
 	}
 
 	.header-mult {
-		width: 27px;
+		width: var(--cell);
 		height: 100%;
 		display: flex;
 		align-items: center;
@@ -304,12 +321,8 @@
 		flex-shrink: 0;
 	}
 
-	.compact .header-mult {
-		width: 22px;
-	}
-
 	.header-score {
-		width: 42px;
+		width: 44px;
 		height: 100%;
 		display: flex;
 		align-items: center;
@@ -365,7 +378,7 @@
 
 	/* Boxes */
 	.box {
-		width: 27px;
+		width: var(--cell);
 		height: 100%;
 		border: 0.5px solid var(--sc-border);
 		display: flex;
@@ -373,10 +386,6 @@
 		justify-content: center;
 		flex-shrink: 0;
 		transition: background-color var(--transition-fast);
-	}
-
-	.compact .box {
-		width: 22px;
 	}
 
 	.box.spacer-box {
@@ -432,7 +441,7 @@
 
 	/* Row score */
 	.row-score {
-		width: 42px;
+		width: 44px;
 		text-align: right;
 		font-weight: 700;
 		flex-shrink: 0;
@@ -447,7 +456,7 @@
 	.section-header {
 		display: flex;
 		align-items: center;
-		height: 22px;
+		height: 24px;
 		font-size: var(--sc-header);
 		font-weight: 700;
 	}
@@ -455,18 +464,20 @@
 	/* Score summary */
 	.score-summary {
 		display: flex;
-		gap: 16px;
+		gap: var(--space-md);
 		justify-content: flex-end;
-		padding: 4px 8px;
+		align-items: baseline;
+		padding: var(--space-sm) var(--space-xs) 0;
 		font-weight: 700;
 		font-size: var(--sc-summary);
 	}
 
 	.score-line-text.positive { color: var(--score-positive); }
 	.score-line-text.negative { color: var(--score-negative); }
+	/* The running total is the sheet's headline number */
 	.score-line-text.total {
 		color: var(--sc-text);
-		font-size: var(--sc-summary-lg);
+		font-size: calc(var(--sc-summary-lg) * 1.5);
 		font-weight: 800;
 	}
 </style>

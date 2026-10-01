@@ -19,11 +19,12 @@
 		onselect,
 	}: Props = $props();
 
+	// Fixed column width per card size — wide enough for two-digit pair sums ("10 + 12")
 	const SIZE_MAP: Record<ComboSize, string> = {
-		small: 'minmax(75px, 1fr)',
-		medium: 'minmax(90px, 1fr)',
-		large: 'minmax(105px, 1fr)',
-		extra_large: 'minmax(135px, 1fr)',
+		small: '64px',
+		medium: '76px',
+		large: '88px',
+		extra_large: '112px',
 	};
 
 	let prefs = $derived(preferences.current);
@@ -80,7 +81,7 @@
 {#if invalidMessage}
 	<div class="invalid-toast">{invalidMessage}</div>
 {/if}
-<div class="combo-grid">
+<div class="combo-grid" style:--combo-col={SIZE_MAP[prefs.comboSize]}>
 	{#each sortedCombinations as combo}
 		<CombinationCard
 			combination={combo}
@@ -99,15 +100,17 @@
 		position: relative;
 	}
 
+	/* auto-fit collapses unused tracks so the cards centre under the dice */
 	.combo-grid {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-		padding: 8px;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, var(--combo-col));
+		justify-content: center;
+		gap: var(--space-sm);
+		/* Room for the selected card's shadow inside the scroll area */
+		padding: var(--space-xs);
 		overflow-y: auto;
 		max-height: 140px;
 		width: 100%;
-		justify-content: flex-start;
 	}
 
 	.invalid-toast {
@@ -136,8 +139,7 @@
 	@media (orientation: landscape) and (max-height: 500px) {
 		.combo-grid {
 			max-height: 120px;
-			padding: 4px;
-			gap: 4px;
+			gap: var(--space-xs);
 		}
 	}
 </style>

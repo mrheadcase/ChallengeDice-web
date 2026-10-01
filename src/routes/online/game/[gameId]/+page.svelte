@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
+	import { MediaQuery } from 'svelte/reactivity';
 	import { onlineGame } from '$lib/stores/onlineGame.svelte';
 	import DiceDisplay from '$lib/components/DiceDisplay.svelte';
 	import CombinationGrid from '$lib/components/CombinationGrid.svelte';
@@ -19,6 +20,10 @@
 	let viewingPlayerIndex = $state(0);
 	let autoRolledRound = $state(-1);
 	let showSettings = $state(false);
+
+	// Desktop two-column layout has room for larger dice (excludes short landscape phones)
+	const wideLayout = new MediaQuery('(min-width: 1024px) and (min-height: 501px)');
+	let diceSize = $derived(wideLayout.current ? 68 : 56);
 
 	let gameState = $derived(onlineGame.gameState);
 	let gameId = $derived(page.params.gameId as string);
@@ -118,11 +123,13 @@
 		</div>
 	</div>
 
-	<PlayerTabs
-		players={gameState.players}
-		activeIndex={viewingPlayerIndex}
-		onselect={(i) => { viewingPlayerIndex = i; }}
-	/>
+	<div class="tabs-row">
+		<PlayerTabs
+			players={gameState.players}
+			activeIndex={viewingPlayerIndex}
+			onselect={(i) => { viewingPlayerIndex = i; }}
+		/>
+	</div>
 
 	<div class="game-content">
 		<div class="dice-section">
@@ -142,7 +149,7 @@
 			{/if}
 
 			{#if gameState.diceValues.length > 0}
-				<DiceDisplay diceValues={gameState.diceValues} {rolling} selectedCombination={selectedCombo} />
+				<DiceDisplay diceValues={gameState.diceValues} {rolling} {diceSize} selectedCombination={selectedCombo} />
 			{/if}
 
 			{#if gameState.phase === 'SELECTING'}
@@ -192,7 +199,7 @@
 
 	.top-bar {
 		display: flex; align-items: center; justify-content: space-between;
-		padding: 8px 16px; background: #1A0D04; color: #F0E8D8;
+		padding: var(--space-sm) var(--space-md); background: #1A0D04; color: #F0E8D8;
 		gap: 8px; flex-wrap: wrap;
 	}
 	.top-bar-right { display: flex; gap: 4px; align-items: center; }
@@ -205,13 +212,17 @@
 		font-size: var(--font-size-xs); color: #FFA726; font-style: italic;
 	}
 
-	.game-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+	/* Outer margin + gap between the turn panel and the scorecard */
+	.game-content {
+		flex: 1; display: flex; flex-direction: column; overflow: hidden;
+		gap: var(--space-md); padding: var(--space-md);
+	}
 	.dice-section {
-		padding: 8px; display: flex; flex-direction: column;
-		align-items: center; gap: 8px; flex-shrink: 0;
+		display: flex; flex-direction: column;
+		align-items: center; gap: var(--space-lg); flex-shrink: 0;
 	}
 
-	.roll-prompt, .waiting-prompt { text-align: center; padding: 16px; }
+	.roll-prompt, .waiting-prompt { text-align: center; }
 	.roll-prompt p, .waiting-prompt p { color: var(--text-medium); margin-bottom: 12px; font-weight: 600; }
 
 	.roll-btn {
@@ -220,7 +231,7 @@
 	}
 	.roll-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-	.selecting-info { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+	.selecting-info { width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--space-md); }
 	.selecting-label { font-weight: 600; color: var(--text-medium); font-size: var(--font-size-sm); }
 
 	.confirm-btn {
@@ -230,34 +241,33 @@
 
 	.finished-count { font-size: var(--font-size-sm); color: var(--text-muted); }
 
-	.scorecard-section { flex: 1; overflow: auto; padding: 8px; }
+	/* Size container so the scorecard's cells can scale to the space it gets */
+	.scorecard-section { flex: 1; overflow: auto; min-height: 0; container-type: inline-size; }
 
+	/* Desktop: centred board, turn panel left, scorecard sized to its grid on the right */
 	@media (min-width: 1024px) {
-		.game-content { flex-direction: row; }
-		.dice-section { flex: 0 0 45%; overflow-y: auto; }
-		.scorecard-section { flex: 0 0 55%; }
+		.tabs-row, .game-content { width: 100%; max-width: 1120px; margin-inline: auto; }
+		.game-content { flex-direction: row; gap: var(--space-xl); padding: var(--space-lg); }
+		.dice-section { flex: 1 1 0; min-width: 0; align-self: flex-start; }
+		/* Cells are already at full size here, so size to content instead */
+		.scorecard-section { flex: 0 0 auto; container-type: normal; }
 	}
 
 	/* Landscape on phones — switch to side-by-side to fit the short viewport height */
 	@media (orientation: landscape) and (max-height: 500px) {
-		.top-bar { padding: 4px 12px; flex-wrap: nowrap; }
+		.top-bar { padding: var(--space-xs) var(--space-md); flex-wrap: nowrap; }
 		.round-label { font-size: var(--font-size-sm); }
 		.icon-btn { padding: 4px 8px; }
 
-		.game-content { flex-direction: row; }
+		.game-content { flex-direction: row; gap: var(--space-sm); padding: var(--space-sm); }
 		.dice-section {
-			flex: 0 0 50%;
-			padding: 4px;
-			gap: 4px;
+			flex: 1 1 50%;
+			gap: var(--space-sm);
 			overflow-y: auto;
 			min-height: 0;
 		}
-		.scorecard-section {
-			flex: 0 0 50%;
-			padding: 4px;
-		}
-
-		.roll-prompt, .waiting-prompt { padding: 8px; }
+		.scorecard-section { flex: 1 1 50%; }
+		.selecting-info { gap: var(--space-sm); }
 		.roll-prompt p, .waiting-prompt p { margin-bottom: 6px; }
 		.roll-btn { padding: 8px 24px; font-size: var(--font-size-base); }
 		.confirm-btn { padding: 8px 20px; }

@@ -90,8 +90,8 @@
 		font-size: var(--font-size-lg);
 	}
 
-	.pair1 { color: #1565C0; }
-	.pair2 { color: #2E7D32; }
+	.pair1 { color: var(--combo-pair1); }
+	.pair2 { color: var(--combo-pair2); }
 	.separator { color: var(--text-muted); font-weight: 400; }
 
 	.fifth {
@@ -107,7 +107,7 @@
 	}
 
 	.fifth-value {
-		color: #E65100;
+		color: var(--combo-fifth);
 		font-weight: 700;
 	}
 

@@ -45,10 +45,11 @@
 </div>
 
 <style>
+	/* Side padding matches the game page margins so tabs line up with the board */
 	.player-tabs {
 		display: flex;
-		gap: 4px;
-		padding: 4px 8px;
+		gap: var(--space-sm);
+		padding: var(--space-sm) var(--space-md) 0;
 		overflow-x: auto;
 		scrollbar-width: none;
 	}
@@ -121,9 +122,13 @@
 		font-weight: 700;
 	}
 
+	@media (min-width: 1024px) {
+		.player-tabs { padding: var(--space-md) var(--space-lg) 0; }
+	}
+
 	/* Landscape on phones — compact tabs to save vertical space */
 	@media (orientation: landscape) and (max-height: 500px) {
-		.player-tabs { padding: 2px 6px; gap: 3px; }
+		.player-tabs { padding: var(--space-xs) var(--space-sm) 0; gap: var(--space-xs); }
 		.player-tab { padding: 3px 8px; gap: 4px; }
 		.player-name, .player-score { font-size: var(--font-size-xs); }
 	}
