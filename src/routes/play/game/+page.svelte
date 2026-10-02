@@ -5,11 +5,12 @@
 	import GameLayout from '$lib/components/GameLayout.svelte';
 	import DiceDisplay from '$lib/components/DiceDisplay.svelte';
 	import CombinationGrid from '$lib/components/CombinationGrid.svelte';
-	import Scorecard from '$lib/components/Scorecard.svelte';
+	import Scorecard, { type ScorecardPart } from '$lib/components/Scorecard.svelte';
 	import PlayerTabs from '$lib/components/PlayerTabs.svelte';
 	import EliminationDialog from '$lib/components/EliminationDialog.svelte';
 	import SettingsDialog from '$lib/components/SettingsDialog.svelte';
 	import type { DiceCombination } from '$lib/game/models';
+	import { applySelection, calculateScore } from '$lib/game/logic';
 	import { preferences } from '$lib/stores/preferences.svelte';
 	import { playRollingSound, playShakingSound, tryVibrate } from '$lib/utils/sounds';
 	import { boardDiceSize } from '$lib/utils/boardLayout';
@@ -26,6 +27,14 @@
 
 	let gameState = $derived(localGame.gameState);
 	let currentPlayer = $derived(gameState.players[gameState.currentPlayerIndex]);
+
+	// How much the selected combination changes the current player's total, signed for the button
+	let movePoints = $derived.by(() => {
+		if (!selectedCombo || !currentPlayer) return '';
+		const sc = currentPlayer.scorecard;
+		const d = calculateScore(applySelection(sc, selectedCombo)).totalScore - calculateScore(sc).totalScore;
+		return d > 0 ? `+${d}` : d < 0 ? `−${Math.abs(d)}` : '0';
+	});
 	let viewingPlayer = $derived(gameState.players[viewingPlayerIndex]);
 
 	// Track eliminations — use untrack to avoid read/write cycle on prevActiveIds
@@ -178,7 +187,7 @@
 			{#if !localGame.isCurrentPlayerAI()}
 				<div class="score-bar">
 					{#if selectedCombo}
-						<button class="btn btn-primary btn-block score-btn" onclick={scoreIt}>Score It</button>
+						<button class="btn btn-primary btn-block score-btn" onclick={scoreIt}>Score It <span class="move-points">{movePoints}</span></button>
 					{:else}
 						<p class="score-hint">Tap a combination to preview it on your scorecard</p>
 					{/if}
@@ -187,11 +196,12 @@
 		{/if}
 	{/snippet}
 
-	{#snippet scorecard()}
+	{#snippet scorecard(part: ScorecardPart)}
 		{#if viewingPlayer}
 			<Scorecard
 				scorecard={viewingPlayer.scorecard}
 				previewCombination={viewingPlayerIndex === gameState.currentPlayerIndex ? selectedCombo : null}
+				{part}
 			/>
 		{/if}
 	{/snippet}
@@ -220,10 +230,10 @@
 		margin-bottom: var(--space-sm);
 	}
 
-	/* Fixed height so swapping the hint for the button doesn't shift the layout */
+	/* Fixed height (GameLayout's --score-bar) so swapping the hint for the button doesn't shift the layout */
 	.score-bar {
 		flex-shrink: 0;
-		min-height: 44px;
+		min-height: var(--score-bar, 44px);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -236,17 +246,20 @@
 		text-align: center;
 	}
 
+	.move-points {
+		font-family: var(--font-numeric);
+		padding: 1px var(--space-sm);
+		border-radius: var(--radius-md);
+		background: rgba(0, 0, 0, 0.14);
+	}
+
 	.score-btn {
 		padding: 10px var(--space-lg);
 		border-radius: var(--radius-md);
 	}
 
-	/*
-	 * Portrait phones: the scorecard's position doesn't depend on this bar here (only the
-	 * combo grid resizes), so drop the reserved button height and shrink the hint.
-	 */
+	/* Portrait phones: smaller hint text */
 	@media (max-width: 767px) and (orientation: portrait) {
-		.score-bar { min-height: 0; }
 		.score-hint {
 			font-size: var(--font-size-xs);
 			line-height: var(--line-height-xs);

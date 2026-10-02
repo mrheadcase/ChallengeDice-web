@@ -1,4 +1,7 @@
 <script>
+	import '@fontsource/barlow-semi-condensed/500.css';
+	import '@fontsource/barlow-semi-condensed/600.css';
+	import '@fontsource/barlow-semi-condensed/700.css';
 	import '../app.css';
 	// Import preferences to ensure theme is applied on load
 	import '$lib/stores/preferences.svelte';

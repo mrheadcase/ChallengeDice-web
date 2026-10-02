@@ -63,7 +63,8 @@
 		border: 2px solid transparent;
 		transition: all var(--transition-fast);
 		white-space: nowrap;
-		flex-shrink: 0;
+		/* Share the row when the tabs fit; scroll when they don't */
+		flex: 1 0 auto;
 	}
 
 	.player-tab.active {
@@ -85,9 +86,12 @@
 		color: var(--text-dark);
 	}
 
+	.player-name { flex: 1; text-align: left; }
+
 	.player-score {
+		font-family: var(--font-numeric);
 		font-weight: 700;
-		font-size: var(--font-size-sm);
+		font-size: var(--font-size-base);
 		font-variant-numeric: tabular-nums;
 	}
 

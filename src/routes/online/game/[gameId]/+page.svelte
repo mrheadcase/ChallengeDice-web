@@ -6,10 +6,11 @@
 	import GameLayout from '$lib/components/GameLayout.svelte';
 	import DiceDisplay from '$lib/components/DiceDisplay.svelte';
 	import CombinationGrid from '$lib/components/CombinationGrid.svelte';
-	import Scorecard from '$lib/components/Scorecard.svelte';
+	import Scorecard, { type ScorecardPart } from '$lib/components/Scorecard.svelte';
 	import PlayerTabs from '$lib/components/PlayerTabs.svelte';
 	import SettingsDialog from '$lib/components/SettingsDialog.svelte';
 	import type { DiceCombination } from '$lib/game/models';
+	import { applySelection, calculateScore } from '$lib/game/logic';
 	import * as FM from '$lib/firebase/gameManager';
 	import { preferences } from '$lib/stores/preferences.svelte';
 	import { playRollingSound, playShakingSound, tryVibrate } from '$lib/utils/sounds';
@@ -27,6 +28,14 @@
 	let gameId = $derived(page.params.gameId as string);
 	let localIdx = $derived(onlineGame.localPlayerIndex);
 	let viewingPlayer = $derived(gameState.players[viewingPlayerIndex]);
+
+	// How much the selected combination changes the local player's total, signed for the button
+	let movePoints = $derived.by(() => {
+		const sc = gameState.players[localIdx]?.scorecard;
+		if (!selectedCombo || !sc) return '';
+		const d = calculateScore(applySelection(sc, selectedCombo)).totalScore - calculateScore(sc).totalScore;
+		return d > 0 ? `+${d}` : d < 0 ? `−${Math.abs(d)}` : '0';
+	});
 
 	// Start observing if not already
 	$effect(() => {
@@ -154,7 +163,7 @@
 						onselect={handleSelectCombo}
 					/>
 					{#if selectedCombo}
-						<button class="btn btn-success btn-block confirm-btn" onclick={handleConfirmSelection}>Confirm</button>
+						<button class="btn btn-success btn-block confirm-btn" onclick={handleConfirmSelection}>Confirm <span class="move-points">{movePoints}</span></button>
 					{/if}
 				</div>
 			{:else if onlineGame.localPlayerFinished}
@@ -168,11 +177,12 @@
 		{/if}
 	{/snippet}
 
-	{#snippet scorecard()}
+	{#snippet scorecard(part: ScorecardPart)}
 		{#if viewingPlayer}
 			<Scorecard
 				scorecard={viewingPlayer.scorecard}
 				previewCombination={viewingPlayerIndex === localIdx ? selectedCombo : null}
+				{part}
 			/>
 		{/if}
 	{/snippet}
@@ -204,15 +214,23 @@
 		line-height: var(--line-height-sm);
 	}
 
+	/* Points the move is worth, on the action button */
+	.move-points {
+		font-family: var(--font-numeric);
+		padding: 1px var(--space-sm);
+		border-radius: var(--radius-md);
+		background: rgba(0, 0, 0, 0.18);
+	}
+
 	.finished-count {
 		font-size: var(--font-size-sm);
 		color: var(--text-muted);
 		font-variant-numeric: tabular-nums;
 	}
 
-	/* Portrait phones: the combination grid shrinks (and scrolls) to fit the turn panel */
-	@media (max-width: 767px) and (orientation: portrait) {
-		.selecting-info { flex: 0 1 auto; min-height: 0; gap: var(--space-sm); }
+	/* Stacked layouts: the combination grid shrinks (and scrolls) to fit the fixed-height turn panel */
+	@media (max-width: 1023px) and (min-height: 501px) {
+		.selecting-info { flex: 1 1 0; min-height: 0; gap: var(--space-sm); }
 	}
 
 	/* Landscape phones: compact controls for the short height */
