@@ -1,0 +1,52 @@
+# Builds the development branch and publishes it to the rolling "dev-latest"
+# pre-release. The dev server pulls from there on its own (scripts/pull-dev-deploy.sh,
+# run by cron as the deploy user), so GitHub never needs access to the LAN.
+name: Deploy to dev
+
+on:
+  push:
+    branches: [development]
+
+permissions:
+  contents: write # create/update the dev-latest release
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+
+      # dev.challengedice.com serves from the domain root, not /ChallengeDice-web
+      - run: npm run build
+        env:
+          BASE_PATH: ''
+
+      - name: Package
+        run: |
+          tar czf challengedice-dev.tar.gz -C build .
+          # Manifest the server checks: commit, then the tarball's checksum
+          echo "$GITHUB_SHA $(sha256sum challengedice-dev.tar.gz | cut -d' ' -f1)" > version.txt
+
+      - name: Publish to the dev-latest pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view dev-latest > /dev/null 2>&1; then
+            gh release create dev-latest --prerelease --target "$GITHUB_SHA" \
+              --title "Development build" \
+              --notes "Latest build of the development branch, picked up automatically by the dev server. Replaced on every push."
+          fi
+          gh release upload dev-latest challengedice-dev.tar.gz --clobber
+          # Uploaded last: the server treats a new version.txt as the signal to deploy
+          gh release upload dev-latest version.txt --clobber
