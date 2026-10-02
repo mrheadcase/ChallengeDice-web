@@ -12,7 +12,8 @@
 	--text-dark: #2B1A0E;
 	--text-medium: #5A3D20;
 	--text-light: #F0E8D8;
-	--text-muted: #B8A888;
+	/* 7:1 on white; the dark theme keeps its lighter value */
+	--text-muted: #6E5638;
 	--score-positive: #2E7D32;
 	--score-negative: #C62828;
 
@@ -85,6 +86,8 @@
 	 * 700 numbers/emphasis.
 	 */
 	--font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	/* Condensed numerals for scores and in-cell values, so "100" fits narrow cells */
+	--font-numeric: 'Barlow Semi Condensed', var(--font-family);
 	--font-size-2xs: 0.6875rem;
 	--font-size-xs: 0.75rem;
 	--font-size-sm: 0.875rem;
@@ -119,7 +122,8 @@
 
 	/* Button colors */
 	--btn-primary-bg: #C47A10;
-	--btn-primary-text: #FFFFFF;
+	/* Dark text on amber (5.3:1); white was only 3.4:1 */
+	--btn-primary-text: #1A0D04;
 	--btn-primary-hover: #A86400;
 	--btn-secondary-bg: #6B3FA0;
 	--btn-secondary-text: #FFFFFF;
@@ -127,14 +131,20 @@
 	--btn-success-bg: #2E7D32;
 	--btn-danger-bg: #C62828;
 
-	/* Scorecard colors */
-	--sc-border: #444444;
-	--sc-text: #1A1A1A;
-	--sc-filled-bg: #D0D0D0;
-	--sc-hint-color: #5C8DB8;
-	--sc-mark-scored: #1565C0;
-	--sc-mark-penalty: #C62828;
-	--sc-near-text: #8A5300;
+	/*
+	 * Scorecard — marked cells stay neutral (gold tints) so the turn's preview colours
+	 * (--combo-pair1/2, --combo-fifth) are the only colour on the sheet
+	 */
+	--sc-text: #2B1A0E;
+	--sc-line: rgba(43, 26, 14, 0.14);
+	--sc-well: #FAF6F0;
+	--sc-cell: rgba(43, 26, 14, 0.05);
+	--sc-cell-passed: rgba(196, 122, 16, 0.2);
+	--sc-current-bg: #C47A10;
+	--sc-current-text: #1A0D04;
+	--sc-total-frame: #C47A10;
+	--sc-penalty: #C62828;
+	--sc-near: #B26A00;
 }
 
 /* Reset */
@@ -220,13 +230,16 @@ a {
 
 
 	/* Scorecard colors for dark mode */
-	--sc-border: #6B4A2A;
 	--sc-text: #FAF6F0;
-	--sc-filled-bg: #2A1E14;
-	--sc-hint-color: #7AAFDB;
-	--sc-mark-scored: #90CAF9;
-	--sc-mark-penalty: #EF9A9A;
-	--sc-near-text: #FFB74D;
+	--sc-line: rgba(240, 213, 144, 0.16);
+	--sc-well: #22140A;
+	--sc-cell: rgba(255, 255, 255, 0.045);
+	--sc-cell-passed: rgba(240, 213, 144, 0.28);
+	--sc-current-bg: #F0D590;
+	--sc-current-text: #1A0D04;
+	--sc-total-frame: #F0D590;
+	--sc-penalty: #E57373;
+	--sc-near: #FFB74D;
 	color-scheme: dark;
 }
 
@@ -260,8 +273,8 @@ a {
 .btn-primary:hover:not(:disabled) { background: var(--btn-primary-hover); }
 .btn-secondary { background: var(--btn-secondary-bg); color: var(--btn-secondary-text); box-shadow: var(--shadow-secondary); }
 .btn-secondary:hover:not(:disabled) { background: var(--btn-secondary-hover); }
-.btn-success { background: var(--btn-success-bg); color: var(--btn-primary-text); }
-.btn-danger { background: var(--btn-danger-bg); color: var(--btn-primary-text); }
+.btn-success { background: var(--btn-success-bg); color: var(--text-on-color); }
+.btn-danger { background: var(--btn-danger-bg); color: var(--text-on-color); }
 /* Outlined: amber for a real alternative, tan for a quiet one (e.g. "Back to menu") */
 .btn-outline { background: var(--card-bg); border: 2px solid var(--gold-amber); color: var(--gold-amber); }
 .btn-quiet { background: var(--card-bg); border: 2px solid var(--warm-tan); color: var(--text-medium); }
@@ -339,6 +352,16 @@ a {
 .color-swatch.taken {
 	opacity: 0.3;
 	cursor: not-allowed;
+}
+
+/* Visually hidden, still read by screen readers */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
 }
 
 /* Reduced motion */

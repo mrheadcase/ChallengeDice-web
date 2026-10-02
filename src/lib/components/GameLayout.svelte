@@ -6,7 +6,6 @@
 	 */
 	import type { Snippet } from 'svelte';
 	import { base } from '$app/paths';
-	import PinchZoomContainer from './PinchZoomContainer.svelte';
 
 	interface Props {
 		round: number;
@@ -50,9 +49,7 @@
 		</div>
 
 		<div class="scorecard-section">
-			<PinchZoomContainer>
-				{@render scorecard()}
-			</PinchZoomContainer>
+			{@render scorecard()}
 		</div>
 	</div>
 </div>

@@ -106,15 +106,6 @@
 		padding: var(--space-sm) var(--space-md) max(var(--space-sm), env(safe-area-inset-bottom));
 	}
 
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip: rect(0 0 0 0);
-		white-space: nowrap;
-	}
-
 	.dice-icon {
 		display: none;
 		width: 160px;
