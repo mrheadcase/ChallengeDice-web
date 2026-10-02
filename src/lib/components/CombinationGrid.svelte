@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { DiceCombination, Scorecard } from '$lib/game/models';
+	import { tick } from 'svelte';
 	import CombinationCard from './CombinationCard.svelte';
-	import { preferences, type ComboSize } from '$lib/stores/preferences.svelte';
+	import { preferences } from '$lib/stores/preferences.svelte';
 
 	interface Props {
 		combinations: DiceCombination[];
@@ -18,13 +19,6 @@
 		selectedCombination = null,
 		onselect,
 	}: Props = $props();
-
-	const SIZE_MAP: Record<ComboSize, string> = {
-		small: 'minmax(75px, 1fr)',
-		medium: 'minmax(90px, 1fr)',
-		large: 'minmax(105px, 1fr)',
-		extra_large: 'minmax(135px, 1fr)',
-	};
 
 	let prefs = $derived(preferences.current);
 
@@ -68,6 +62,50 @@
 		invalidTimeout = setTimeout(() => { invalidMessage = ''; }, 2000);
 	}
 
+	// Which edges have hidden cards beyond them — drives the scroll fades
+	let gridEl = $state<HTMLDivElement>();
+	let moreAbove = $state(false);
+	let moreBelow = $state(false);
+
+	function updateOverflow() {
+		if (!gridEl) return;
+		const { scrollTop, scrollHeight, clientHeight } = gridEl;
+		// A few px of slack (padding, sub-pixel rounding) isn't a hidden row
+		moreAbove = scrollTop > 4;
+		moreBelow = scrollTop + clientHeight < scrollHeight - 4;
+	}
+
+	$effect(() => {
+		if (!gridEl) return;
+		const ro = new ResizeObserver(updateOverflow);
+		ro.observe(gridEl);
+		return () => ro.disconnect();
+	});
+
+	// The card count changes every roll without resizing the grid itself
+	$effect(() => {
+		sortedCombinations;
+		updateOverflow();
+	});
+
+	/*
+	 * Selecting a card can shrink the grid (the Score It button replaces the hint on
+	 * phones), so scroll the grid itself, never the page, to keep that card in view.
+	 */
+	$effect(() => {
+		if (!selectedCombination || !gridEl) return;
+		const grid = gridEl;
+		tick().then(() => {
+			const card = grid.querySelector<HTMLElement>('.combo-card.selected');
+			if (!card) return;
+			const g = grid.getBoundingClientRect();
+			const c = card.getBoundingClientRect();
+			if (c.top < g.top) grid.scrollTop -= g.top - c.top + 4;
+			else if (c.bottom > g.bottom) grid.scrollTop += c.bottom - g.bottom + 4;
+			updateOverflow();
+		});
+	});
+
 	function isSelected(combo: DiceCombination): boolean {
 		if (!selectedCombination) return false;
 		return combo.pair1Sum === selectedCombination.pair1Sum
@@ -80,7 +118,13 @@
 {#if invalidMessage}
 	<div class="invalid-toast">{invalidMessage}</div>
 {/if}
-<div class="combo-grid">
+<div
+	class="combo-grid size-{prefs.comboSize}"
+	class:more-above={moreAbove}
+	class:more-below={moreBelow}
+	bind:this={gridEl}
+	onscroll={updateOverflow}
+>
 	{#each sortedCombinations as combo}
 		<CombinationCard
 			combination={combo}
@@ -97,30 +141,59 @@
 <style>
 	.combo-wrapper {
 		position: relative;
+		width: 100%;
 	}
 
+	/*
+	 * Columns stretch so the grid spans the full board width, lining up with the
+	 * scorecard's edges. Rows are pinned to their content height: when the grid is
+	 * squeezed (e.g. the Score It button appears), WebKit would otherwise shrink the
+	 * rows and push each card's points line onto its border.
+	 */
 	.combo-grid {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-		padding: 8px;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(var(--combo-col), 1fr));
+		grid-auto-rows: max-content;
+		gap: var(--space-sm);
+		/* Room for the selected card's shadow inside the scroll area, pulled back out so card edges align with the scorecard */
+		padding: var(--space-xs);
+		margin-inline: calc(-1 * var(--space-xs));
+		width: calc(100% + 2 * var(--space-xs));
 		overflow-y: auto;
 		max-height: 140px;
-		width: 100%;
-		justify-content: flex-start;
+		--fade-top: 0px;
+		--fade-bottom: 0px;
+		mask-image: linear-gradient(
+			to bottom,
+			transparent,
+			#000 var(--fade-top),
+			#000 calc(100% - var(--fade-bottom)),
+			transparent
+		);
 	}
+
+	/* Minimum column width per card-size preference — fits two two-digit chips plus the 5th-die chip */
+	.size-small { --combo-col: 88px; }
+	.size-medium { --combo-col: 96px; }
+	.size-large { --combo-col: 104px; }
+	.size-extra_large { --combo-col: 128px; }
+
+	/* Fade whichever edge has more cards beyond it, so a cut-off row reads as scrollable */
+	.combo-grid.more-above { --fade-top: 20px; }
+	.combo-grid.more-below { --fade-bottom: 20px; }
 
 	.invalid-toast {
 		position: absolute;
-		top: -24px;
+		top: calc(-1 * var(--space-lg));
 		left: 50%;
 		transform: translateX(-50%);
 		text-align: center;
 		font-size: var(--font-size-sm);
 		font-weight: 600;
+		line-height: var(--line-height-sm);
 		color: var(--score-negative);
 		background: var(--cream);
-		padding: 2px 12px;
+		padding: var(--space-2xs) 12px;
 		border-radius: var(--radius-md);
 		z-index: 10;
 		white-space: nowrap;
@@ -132,12 +205,31 @@
 		}
 	}
 
+	/*
+	 * Portrait phones: the grid is its natural height, shrinking (and scrolling) only when
+	 * the turn panel runs out of room above the scorecard. It never grows, so a single row
+	 * of cards sits right above the action bar with no empty band between them.
+	 */
+	@media (max-width: 767px) and (orientation: portrait) {
+		.combo-wrapper {
+			flex: 0 1 auto;
+			min-height: 0;
+			display: flex;
+			flex-direction: column;
+		}
+		.combo-grid {
+			flex: 0 1 auto;
+			min-height: 0;
+			max-height: none;
+			align-content: start;
+		}
+	}
+
 	/* Landscape on phones — cap height so it doesn't swallow the scorecard side */
 	@media (orientation: landscape) and (max-height: 500px) {
 		.combo-grid {
 			max-height: 120px;
-			padding: 4px;
-			gap: 4px;
+			gap: var(--space-xs);
 		}
 	}
 </style>

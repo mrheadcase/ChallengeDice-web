@@ -5,7 +5,10 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 		<meta name="theme-color" content="#C47A10" />
 		<meta name="description" content="Challenge Dice - A strategic dice game for 1-4 players" />
-		<link rel="icon" href="%sveltekit.assets%/favicon.ico" />
+		<!-- Dice app icon: SVG for modern browsers, ICO (16/32/48) fallback, PNG for iOS home screens -->
+		<link rel="icon" href="%sveltekit.assets%/favicon.ico" sizes="32x32" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
 		<title>Challenge Dice</title>
 		%sveltekit.head%
 	</head>

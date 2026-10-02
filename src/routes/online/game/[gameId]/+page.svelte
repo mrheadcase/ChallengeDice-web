@@ -3,22 +3,25 @@
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { onlineGame } from '$lib/stores/onlineGame.svelte';
+	import GameLayout from '$lib/components/GameLayout.svelte';
 	import DiceDisplay from '$lib/components/DiceDisplay.svelte';
 	import CombinationGrid from '$lib/components/CombinationGrid.svelte';
 	import Scorecard from '$lib/components/Scorecard.svelte';
 	import PlayerTabs from '$lib/components/PlayerTabs.svelte';
 	import SettingsDialog from '$lib/components/SettingsDialog.svelte';
-	import PinchZoomContainer from '$lib/components/PinchZoomContainer.svelte';
 	import type { DiceCombination } from '$lib/game/models';
 	import * as FM from '$lib/firebase/gameManager';
 	import { preferences } from '$lib/stores/preferences.svelte';
 	import { playRollingSound, playShakingSound, tryVibrate } from '$lib/utils/sounds';
+	import { boardDiceSize } from '$lib/utils/boardLayout';
 
 	let rolling = $state(false);
 	let selectedCombo = $state<DiceCombination | null>(null);
 	let viewingPlayerIndex = $state(0);
 	let autoRolledRound = $state(-1);
 	let showSettings = $state(false);
+
+	let diceSize = $derived(boardDiceSize());
 
 	let gameState = $derived(onlineGame.gameState);
 	let gameId = $derived(page.params.gameId as string);
@@ -103,163 +106,120 @@
 	}
 </script>
 
-<div class="game-page">
-	<div class="top-bar">
-		<button class="icon-btn" onclick={leave}>Leave</button>
-		<span class="round-label">Round {gameState.currentRound}</span>
-		{#if gameState.disconnectedPlayerNames.length > 0}
-			<span class="disconnected-info">
-				{gameState.disconnectedPlayerNames.join(', ')} disconnected
-			</span>
+<GameLayout
+	round={gameState.currentRound}
+	leading={{ label: 'Leave', onclick: leave }}
+	notice={gameState.disconnectedPlayerNames.length > 0
+		? `${gameState.disconnectedPlayerNames.join(', ')} disconnected`
+		: undefined}
+	onsettings={() => { showSettings = true; }}
+>
+	{#snippet tabs()}
+		<PlayerTabs
+			players={gameState.players}
+			activeIndex={viewingPlayerIndex}
+			onselect={(i) => { viewingPlayerIndex = i; }}
+		/>
+	{/snippet}
+
+	{#snippet turn()}
+		{#if gameState.phase === 'ROLLING'}
+			{#if onlineGame.isLocalPlayerRoller}
+				<div class="prompt">
+					<p>Your turn to roll!</p>
+					<button class="btn btn-primary btn-lg roll-btn" onclick={handleRoll} disabled={rolling}>
+						{rolling ? 'Rolling...' : 'Roll Dice'}
+					</button>
+				</div>
+			{:else}
+				<div class="prompt">
+					<p>Waiting for {gameState.players[gameState.currentPlayerIndex]?.name ?? 'player'} to roll...</p>
+				</div>
+			{/if}
 		{/if}
-		<div class="top-bar-right">
-			<button class="icon-btn" onclick={() => { showSettings = true; }}>Settings</button>
-			<button class="icon-btn" onclick={() => goto(`${base}/rules`)}>Rules</button>
-		</div>
-	</div>
 
-	<PlayerTabs
-		players={gameState.players}
-		activeIndex={viewingPlayerIndex}
-		onselect={(i) => { viewingPlayerIndex = i; }}
-	/>
+		{#if gameState.diceValues.length > 0}
+			<DiceDisplay diceValues={gameState.diceValues} {rolling} {diceSize} selectedCombination={selectedCombo} />
+		{/if}
 
-	<div class="game-content">
-		<div class="dice-section">
-			{#if gameState.phase === 'ROLLING'}
-				{#if onlineGame.isLocalPlayerRoller}
-					<div class="roll-prompt">
-						<p>Your turn to roll!</p>
-						<button class="roll-btn" onclick={handleRoll} disabled={rolling}>
-							{rolling ? 'Rolling...' : 'Roll Dice'}
-						</button>
-					</div>
-				{:else}
-					<div class="waiting-prompt">
-						<p>Waiting for {gameState.players[gameState.currentPlayerIndex]?.name ?? 'player'} to roll...</p>
-					</div>
-				{/if}
-			{/if}
-
-			{#if gameState.diceValues.length > 0}
-				<DiceDisplay diceValues={gameState.diceValues} {rolling} selectedCombination={selectedCombo} />
-			{/if}
-
-			{#if gameState.phase === 'SELECTING'}
-				{#if onlineGame.canLocalPlayerSelect}
-					<div class="selecting-info">
-						<p class="selecting-label">Choose your combination:</p>
-						<CombinationGrid
-							combinations={gameState.combinations}
-							validCombinations={gameState.validCombinations}
-							scorecard={gameState.players[localIdx]?.scorecard ?? { leftMarks: {}, rightMarks: {} }}
-							selectedCombination={selectedCombo}
-							onselect={handleSelectCombo}
-						/>
-						{#if selectedCombo}
-							<button class="confirm-btn" onclick={handleConfirmSelection}>Confirm</button>
-						{/if}
-					</div>
-				{:else if onlineGame.localPlayerFinished}
-					<div class="waiting-prompt">
-						<p>Waiting for other players...</p>
-						<p class="finished-count">
-							{gameState.playersFinishedThisRound.size} / {gameState.players.filter(p => p.isActive).length} done
-						</p>
-					</div>
-				{/if}
-			{/if}
-		</div>
-
-		<div class="scorecard-section">
-			<PinchZoomContainer>
-				{#if viewingPlayer}
-					<Scorecard
-						scorecard={viewingPlayer.scorecard}
-						playerColor={viewingPlayer.color}
-						previewCombination={viewingPlayerIndex === localIdx ? selectedCombo : null}
+		{#if gameState.phase === 'SELECTING'}
+			{#if onlineGame.canLocalPlayerSelect}
+				<div class="selecting-info">
+					<p class="selecting-label">Choose your combination:</p>
+					<CombinationGrid
+						combinations={gameState.combinations}
+						validCombinations={gameState.validCombinations}
+						scorecard={gameState.players[localIdx]?.scorecard ?? { leftMarks: {}, rightMarks: {} }}
+						selectedCombination={selectedCombo}
+						onselect={handleSelectCombo}
 					/>
-				{/if}
-			</PinchZoomContainer>
-		</div>
-	</div>
+					{#if selectedCombo}
+						<button class="btn btn-success btn-block confirm-btn" onclick={handleConfirmSelection}>Confirm</button>
+					{/if}
+				</div>
+			{:else if onlineGame.localPlayerFinished}
+				<div class="prompt">
+					<p>Waiting for other players...</p>
+					<p class="finished-count">
+						{gameState.playersFinishedThisRound.size} / {gameState.players.filter(p => p.isActive).length} done
+					</p>
+				</div>
+			{/if}
+		{/if}
+	{/snippet}
 
-	<SettingsDialog visible={showSettings} onclose={() => { showSettings = false; }} />
-</div>
+	{#snippet scorecard()}
+		{#if viewingPlayer}
+			<Scorecard
+				scorecard={viewingPlayer.scorecard}
+				previewCombination={viewingPlayerIndex === localIdx ? selectedCombo : null}
+			/>
+		{/if}
+	{/snippet}
+</GameLayout>
 
+<SettingsDialog visible={showSettings} onclose={() => { showSettings = false; }} />
+
+<!-- Board layout lives in GameLayout; these style only this page's turn panel content -->
 <style>
-	.game-page { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-
-	.top-bar {
-		display: flex; align-items: center; justify-content: space-between;
-		padding: 8px 16px; background: #1A0D04; color: #F0E8D8;
-		gap: 8px; flex-wrap: wrap;
-	}
-	.top-bar-right { display: flex; gap: 4px; align-items: center; }
-	.icon-btn {
-		color: var(--light-gold); font-weight: 600; font-size: var(--font-size-sm);
-		padding: 6px 12px; border-radius: var(--radius-md);
-	}
-	.round-label { font-weight: 700; color: inherit; }
-	.disconnected-info {
-		font-size: var(--font-size-xs); color: #FFA726; font-style: italic;
+	.prompt { text-align: center; }
+	.prompt p {
+		color: var(--text-medium);
+		line-height: var(--line-height-base);
+		margin-bottom: var(--space-sm);
+		font-weight: 600;
 	}
 
-	.game-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-	.dice-section {
-		padding: 8px; display: flex; flex-direction: column;
-		align-items: center; gap: 8px; flex-shrink: 0;
+	.selecting-info {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-md);
+	}
+	.selecting-label {
+		font-weight: 600;
+		color: var(--text-medium);
+		font-size: var(--font-size-sm);
+		line-height: var(--line-height-sm);
 	}
 
-	.roll-prompt, .waiting-prompt { text-align: center; padding: 16px; }
-	.roll-prompt p, .waiting-prompt p { color: var(--text-medium); margin-bottom: 12px; font-weight: 600; }
-
-	.roll-btn {
-		background: var(--btn-primary-bg); color: var(--btn-primary-text); padding: 14px 40px;
-		border-radius: var(--radius-lg); font-weight: 700; font-size: var(--font-size-lg);
-	}
-	.roll-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-	.selecting-info { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-	.selecting-label { font-weight: 600; color: var(--text-medium); font-size: var(--font-size-sm); }
-
-	.confirm-btn {
-		background: var(--score-positive); color: white; padding: 12px 32px;
-		border-radius: var(--radius-lg); font-weight: 700;
+	.finished-count {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		font-variant-numeric: tabular-nums;
 	}
 
-	.finished-count { font-size: var(--font-size-sm); color: var(--text-muted); }
-
-	.scorecard-section { flex: 1; overflow: auto; padding: 8px; }
-
-	@media (min-width: 1024px) {
-		.game-content { flex-direction: row; }
-		.dice-section { flex: 0 0 45%; overflow-y: auto; }
-		.scorecard-section { flex: 0 0 55%; }
+	/* Portrait phones: the combination grid shrinks (and scrolls) to fit the turn panel */
+	@media (max-width: 767px) and (orientation: portrait) {
+		.selecting-info { flex: 0 1 auto; min-height: 0; gap: var(--space-sm); }
 	}
 
-	/* Landscape on phones — switch to side-by-side to fit the short viewport height */
+	/* Landscape phones: compact controls for the short height */
 	@media (orientation: landscape) and (max-height: 500px) {
-		.top-bar { padding: 4px 12px; flex-wrap: nowrap; }
-		.round-label { font-size: var(--font-size-sm); }
-		.icon-btn { padding: 4px 8px; }
-
-		.game-content { flex-direction: row; }
-		.dice-section {
-			flex: 0 0 50%;
-			padding: 4px;
-			gap: 4px;
-			overflow-y: auto;
-			min-height: 0;
-		}
-		.scorecard-section {
-			flex: 0 0 50%;
-			padding: 4px;
-		}
-
-		.roll-prompt, .waiting-prompt { padding: 8px; }
-		.roll-prompt p, .waiting-prompt p { margin-bottom: 6px; }
-		.roll-btn { padding: 8px 24px; font-size: var(--font-size-base); }
-		.confirm-btn { padding: 8px 20px; }
+		.selecting-info { gap: var(--space-sm); }
+		.prompt p { margin-bottom: var(--space-xs); }
+		.roll-btn { padding: var(--space-sm) var(--space-lg); font-size: var(--font-size-base); }
+		.confirm-btn { padding: var(--space-sm) 20px; }
 	}
 </style>

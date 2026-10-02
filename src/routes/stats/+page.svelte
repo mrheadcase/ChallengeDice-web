@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { base } from '$app/paths';
 	import {
 		getHighScores,
@@ -8,7 +9,6 @@
 		type HighScoreEntry
 	} from '$lib/stores/highScores';
 	import { getGameHistory, clearGameHistory, type GameHistoryEntry } from '$lib/stores/gameHistory';
-	import { PLAYER_COLORS } from '$lib/game/constants';
 
 	let activeTab = $state<'scores' | 'history'>('scores');
 	let activeCategory = $state<ScoreCategory>('solo');
@@ -30,10 +30,7 @@
 </script>
 
 <div class="stats-page">
-	<header class="stats-header">
-		<button class="back-btn" onclick={() => window.history.back()}>← Back</button>
-		<h2>Stats & History</h2>
-	</header>
+	<PageHeader title="Stats & History" onback={() => window.history.back()} />
 
 	<!-- Tabs -->
 	<div class="tabs">
@@ -101,7 +98,7 @@
 							{#each [...game.players].sort((a, b) => b.score - a.score) as player, i}
 								<div class="history-player">
 									<span class="hp-rank">#{i + 1}</span>
-									<span class="hp-dot" style:background={PLAYER_COLORS[player.color as keyof typeof PLAYER_COLORS]?.primary ?? '#999'}></span>
+									<span class="player-dot hp-dot" data-player={player.color}></span>
 									<span class="hp-name">{player.name}{player.isAI ? ' (AI)' : ''}</span>
 									<span class="hp-score" class:positive={player.score > 0} class:negative={player.score < 0}>
 										{player.score}
@@ -123,20 +120,10 @@
 		height: 100%;
 	}
 
-	.stats-header {
-		display: flex;
-		align-items: center;
-		gap: 16px;
-		padding: 16px;
-	}
-
-	.back-btn { color: var(--gold-amber); font-weight: 600; padding: 8px; }
-	h2 { color: var(--text-dark); }
-
 	.tabs {
 		display: flex;
 		gap: 0;
-		padding: 0 16px;
+		padding: 0 var(--space-md);
 	}
 
 	.tab {
@@ -156,7 +143,7 @@
 	.category-pills {
 		display: flex;
 		gap: 6px;
-		padding: 12px 16px;
+		padding: 12px var(--space-md);
 		overflow-x: auto;
 		scrollbar-width: none;
 	}
@@ -164,7 +151,7 @@
 
 	.pill {
 		padding: 6px 12px;
-		border-radius: 20px;
+		border-radius: var(--radius-full);
 		font-size: var(--font-size-sm);
 		font-weight: 600;
 		white-space: nowrap;
@@ -175,20 +162,20 @@
 
 	.pill.active {
 		background: var(--gold-amber);
-		color: white;
+		color: var(--text-on-color);
 		border-color: var(--gold-amber);
 	}
 
 	.list {
 		flex: 1;
 		overflow-y: auto;
-		padding: 0 16px 16px;
+		padding: 0 var(--space-md) var(--space-md);
 	}
 
 	.empty {
 		text-align: center;
 		color: var(--text-muted);
-		padding: 48px 16px;
+		padding: 48px var(--space-md);
 	}
 
 	.score-entry {
@@ -198,7 +185,7 @@
 		padding: 12px;
 		background: var(--card-bg);
 		border-radius: var(--radius-md);
-		margin-bottom: 8px;
+		margin-bottom: var(--space-sm);
 	}
 
 	.rank { font-weight: 700; color: var(--text-muted); width: 28px; }
@@ -219,20 +206,20 @@
 		gap: 12px;
 		font-size: var(--font-size-xs);
 		color: var(--text-muted);
-		margin-top: 2px;
+		margin-top: var(--space-2xs);
 	}
 
 	.history-entry {
 		background: var(--card-bg);
 		border-radius: var(--radius-md);
 		padding: 12px;
-		margin-bottom: 8px;
+		margin-bottom: var(--space-sm);
 	}
 
 	.history-header {
 		display: flex;
 		justify-content: space-between;
-		margin-bottom: 4px;
+		margin-bottom: var(--space-xs);
 	}
 
 	.history-type {
@@ -246,13 +233,13 @@
 	.history-meta {
 		font-size: var(--font-size-sm);
 		color: var(--text-medium);
-		margin-bottom: 8px;
+		margin-bottom: var(--space-sm);
 	}
 
 	.history-players {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: var(--space-xs);
 	}
 
 	.history-player {
@@ -263,7 +250,7 @@
 	}
 
 	.hp-rank { color: var(--text-muted); width: 20px; }
-	.hp-dot { width: 8px; height: 8px; border-radius: 50%; }
+	.hp-dot { width: 8px; height: 8px; }
 	.hp-name { flex: 1; }
 	.hp-score { font-weight: 700; }
 

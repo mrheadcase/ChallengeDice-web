@@ -1,15 +1,11 @@
 <script lang="ts">
-	import { base } from '$app/paths';
-	import { goto } from '$app/navigation';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 </script>
 
-<div class="rules-page">
-	<header class="rules-header">
-		<button class="back-btn" onclick={() => history.back()}>← Back</button>
-		<h2>How to Play</h2>
-	</header>
+<div class="subpage">
+	<PageHeader title="How to Play" sticky onback={() => history.back()} />
 
-	<div class="rules-content">
+	<div class="subpage-content">
 		<section>
 			<h3>Overview</h3>
 			<p>Challenge Dice is a strategic dice game for 1-4 players. Each round, 5 dice are rolled and all players use the same roll to mark their scorecards. The player with the highest score wins!</p>
@@ -73,56 +69,24 @@
 </div>
 
 <style>
-	.rules-page {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		overflow-y: auto;
-	}
-
-	.rules-header {
-		display: flex;
-		align-items: center;
-		gap: 16px;
-		padding: 16px;
-		position: sticky;
-		top: 0;
-		background: var(--cream);
-		z-index: 10;
-	}
-
-	.back-btn {
-		color: var(--gold-amber);
-		font-weight: 600;
-		padding: 8px;
-	}
-
-	h2 { color: var(--text-dark); }
-
-	.rules-content {
-		padding: 0 16px 32px;
-		max-width: 640px;
-		margin: 0 auto;
-	}
-
 	section {
-		margin-bottom: 24px;
+		margin-bottom: var(--space-lg);
 	}
 
 	h3 {
 		color: var(--gold-amber);
-		margin-bottom: 8px;
+		margin-bottom: var(--space-sm);
 		font-size: var(--font-size-lg);
 	}
 
 	p, li {
 		color: var(--text-medium);
 		line-height: 1.6;
-		margin-bottom: 8px;
+		margin-bottom: var(--space-sm);
 	}
 
 	ul, ol {
-		padding-left: 24px;
+		padding-left: var(--space-lg);
 	}
 
 	strong { color: var(--text-dark); }

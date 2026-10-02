@@ -4,15 +4,11 @@
 	/* Theme colors */
 	--cream: #FAF6F0;
 	--warm-tan: #F0E8D8;
-	--deep-brown: #1A0D04;
 	--brown: #2B1A0E;
 	--gold-amber: #C47A10;
 	--light-gold: #F0D590;
 	--pale-gold: #F5E6C8;
 	--mid-brown: #4A2C10;
-	--dark-brown: #3A1E08;
-	--purple: #6B3FA0;
-	--light-purple: #D0BCFF;
 	--text-dark: #2B1A0E;
 	--text-medium: #5A3D20;
 	--text-light: #F0E8D8;
@@ -20,7 +16,46 @@
 	--score-positive: #2E7D32;
 	--score-negative: #C62828;
 
+	/* Status */
+	--warning: #FFA726;
+	--warning-tint: rgba(255, 167, 38, 0.16);
+	--error-tint: #FFEBEE;
+
+	/*
+	 * Always-dark chrome — the game top bar and the home screen stay dark in both
+	 * themes, so these are not overridden in dark mode
+	 */
+	--chrome-bg: #1A0D04;
+	--chrome-text: #F0E8D8;
+	--chrome-accent: #F0D590;
+	--chrome-hover: rgba(255, 255, 255, 0.1);
+
+	/* Text and icons on coloured fills (buttons, badges, player chips) */
+	--text-on-color: #FFFFFF;
+
+	/* Player colours — applied through [data-player] below */
+	--player-blue: #1565C0;
+	--player-blue-light: #BBDEFB;
+	--player-red: #C62828;
+	--player-red-light: #FFCDD2;
+	--player-green: #2E7D32;
+	--player-green-light: #C8E6C9;
+	--player-purple: #6A1B9A;
+	--player-purple-light: #E1BEE7;
+
+	/* Dice — white faces in both themes; a die takes its role colour from a class */
+	--die-white: #FFFFFF;
+	--die-face: var(--die-white);
+	--die-edge: #555555;
+	--die-pip: #000000;
+
+	/* Dice combination roles — pair 1 / pair 2 / 5th die */
+	--combo-pair1: #1565C0;
+	--combo-pair2: #2E7D32;
+	--combo-fifth: #E65100;
+
 	/* Spacing */
+	--space-2xs: 2px;
 	--space-xs: 4px;
 	--space-sm: 8px;
 	--space-md: 16px;
@@ -28,19 +63,49 @@
 	--space-xl: 32px;
 
 	/* Borders */
+	--radius-xs: 3px;
 	--radius-sm: 4px;
 	--radius-md: 8px;
 	--radius-lg: 12px;
 	--radius-xl: 16px;
+	--radius-full: 999px;
 
-	/* Typography */
+	/* Elevation */
+	--shadow-card: 0 1px 4px rgba(0, 0, 0, 0.1);
+	--shadow-raised: 0 4px 16px rgba(0, 0, 0, 0.12);
+	--shadow-overlay: 0 8px 32px rgba(0, 0, 0, 0.2);
+	/* Coloured glows under the amber and purple buttons */
+	--shadow-primary: 0 2px 8px rgba(196, 122, 16, 0.3);
+	--shadow-primary-strong: 0 2px 12px rgba(196, 122, 16, 0.4);
+	--shadow-secondary: 0 2px 12px rgba(107, 63, 160, 0.4);
+
+	/*
+	 * Typography — 1.25 (major third) scale on a 16px base. 2xs (11px) is the floor:
+	 * no UI text goes below it. Weights in use: 400 regular, 600 labels/UI,
+	 * 700 numbers/emphasis.
+	 */
 	--font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	--font-size-2xs: 0.6875rem;
 	--font-size-xs: 0.75rem;
 	--font-size-sm: 0.875rem;
 	--font-size-base: 1rem;
 	--font-size-lg: 1.25rem;
 	--font-size-xl: 1.5rem;
 	--font-size-2xl: 2rem;
+
+	/* Line heights paired with each size, snapped to the 4px grid */
+	--line-height-2xs: 0.75rem;
+	--line-height-xs: 1rem;
+	--line-height-sm: 1.25rem;
+	--line-height-base: 1.5rem;
+	--line-height-lg: 1.75rem;
+	--line-height-xl: 2rem;
+	--line-height-2xl: 2.5rem;
+	/* Single-line numbers inside compact controls (combo cards, badges) */
+	--line-height-tight: 1.2;
+
+	/* Uppercase badges only (AI, OUT) */
+	--letter-spacing-wide: 0.04em;
 
 	/* Transitions */
 	--transition-fast: 150ms ease;
@@ -55,22 +120,21 @@
 	/* Button colors */
 	--btn-primary-bg: #C47A10;
 	--btn-primary-text: #FFFFFF;
-	--btn-primary-hover: #4A2C10;
+	--btn-primary-hover: #A86400;
 	--btn-secondary-bg: #6B3FA0;
 	--btn-secondary-text: #FFFFFF;
-	--btn-tertiary-bg: #FFFFFF;
-	--btn-tertiary-border: #C4B496;
+	--btn-secondary-hover: #5A3488;
+	--btn-success-bg: #2E7D32;
+	--btn-danger-bg: #C62828;
 
 	/* Scorecard colors */
-	--sc-header-bg: #E0E0E0;
 	--sc-border: #444444;
-	--sc-divider: #000000;
 	--sc-text: #1A1A1A;
-	--sc-penalty-bg: #FFEBEE;
-	--sc-scoring-bg: #E3F2FD;
 	--sc-filled-bg: #D0D0D0;
-	--sc-filled-text: #999999;
 	--sc-hint-color: #5C8DB8;
+	--sc-mark-scored: #1565C0;
+	--sc-mark-penalty: #C62828;
+	--sc-near-text: #8A5300;
 }
 
 /* Reset */
@@ -99,6 +163,8 @@ body {
 button, a, input, select {
 	min-height: 44px;
 	font-family: inherit;
+	/* No double-tap-to-zoom on controls, so quick repeat taps (e.g. switching combos) all register */
+	touch-action: manipulation;
 }
 
 button {
@@ -129,47 +195,150 @@ a {
 :root.theme-dark {
 	--cream: #1A0D04;
 	--warm-tan: #2B1A0E;
-	--deep-brown: #FAF6F0;
 	--brown: #2B1A0E;
 	--gold-amber: #F0D590;
 	--light-gold: #F0D590;
 	--pale-gold: #3A1E08;
 	--mid-brown: #F0D590;
-	--dark-brown: #F5E6C8;
-	--purple: #D0BCFF;
-	--light-purple: #6B3FA0;
 	--text-dark: #FAF6F0;
 	--text-medium: #E0D4C0;
 	--text-light: #1A0D04;
 	--text-muted: #B8A888;
 	--score-positive: #81C784;
 	--score-negative: #EF5350;
+	--error-tint: rgba(239, 83, 80, 0.15);
+
+	/* Lighter combination roles so they stay legible on dark surfaces */
+	--combo-pair1: #64B5F6;
+	--combo-pair2: #81C784;
+	--combo-fifth: #FFB74D;
 
 	--card-bg: #2B1A0E;
 	--card-border: #4A2C10;
 	--input-bg: #3A1E08;
 	--overlay-bg: rgba(0, 0, 0, 0.7);
 
-	/* Button colors for dark mode */
-	--btn-primary-bg: #C47A10;
-	--btn-primary-text: #FFFFFF;
-	--btn-primary-hover: #A86400;
-	--btn-secondary-bg: #6B3FA0;
-	--btn-secondary-text: #FFFFFF;
-	--btn-tertiary-bg: #3A1E08;
-	--btn-tertiary-border: #6B4A2A;
 
 	/* Scorecard colors for dark mode */
-	--sc-header-bg: #3A2A1A;
 	--sc-border: #6B4A2A;
-	--sc-divider: #8B6B4A;
 	--sc-text: #FAF6F0;
-	--sc-penalty-bg: #3A1A1A;
-	--sc-scoring-bg: #1A2A3A;
 	--sc-filled-bg: #2A1E14;
-	--sc-filled-text: #7A6A5A;
 	--sc-hint-color: #7AAFDB;
+	--sc-mark-scored: #90CAF9;
+	--sc-mark-penalty: #EF9A9A;
+	--sc-near-text: #FFB74D;
 	color-scheme: dark;
+}
+
+/* Player colour for an element and its children: data-player="BLUE" etc. */
+/* Fallback for an unknown colour */
+[data-player] { --player: var(--text-muted); --player-light: var(--warm-tan); }
+[data-player='BLUE'] { --player: var(--player-blue); --player-light: var(--player-blue-light); }
+[data-player='RED'] { --player: var(--player-red); --player-light: var(--player-red-light); }
+[data-player='GREEN'] { --player: var(--player-green); --player-light: var(--player-green-light); }
+[data-player='PURPLE'] { --player: var(--player-purple); --player-light: var(--player-purple-light); }
+
+/*
+ * Shared components — buttons, page headers, badges, and player dots are styled once
+ * here instead of in every page that uses them
+ */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-sm);
+	padding: 12px var(--space-lg);
+	border-radius: var(--radius-lg);
+	font-weight: 700;
+	font-size: var(--font-size-base);
+	line-height: var(--line-height-base);
+	transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); box-shadow: var(--shadow-primary); }
+.btn-primary:hover:not(:disabled) { background: var(--btn-primary-hover); }
+.btn-secondary { background: var(--btn-secondary-bg); color: var(--btn-secondary-text); box-shadow: var(--shadow-secondary); }
+.btn-secondary:hover:not(:disabled) { background: var(--btn-secondary-hover); }
+.btn-success { background: var(--btn-success-bg); color: var(--btn-primary-text); }
+.btn-danger { background: var(--btn-danger-bg); color: var(--btn-primary-text); }
+/* Outlined: amber for a real alternative, tan for a quiet one (e.g. "Back to menu") */
+.btn-outline { background: var(--card-bg); border: 2px solid var(--gold-amber); color: var(--gold-amber); }
+.btn-quiet { background: var(--card-bg); border: 2px solid var(--warm-tan); color: var(--text-medium); }
+/* Text-only: back links, refresh, leave */
+.btn-text { color: var(--gold-amber); font-weight: 600; padding: var(--space-sm); }
+
+.btn-sm { padding: 6px 14px; border-radius: var(--radius-md); font-size: var(--font-size-sm); line-height: var(--line-height-sm); font-weight: 600; }
+.btn-lg { padding: 14px var(--space-xl); font-size: var(--font-size-lg); line-height: var(--line-height-lg); }
+.btn-block { width: 100%; }
+
+/* Menu sub-pages (rules, settings, about): scrolling column with a readable content width */
+.subpage {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	overflow-y: auto;
+}
+.subpage-content {
+	width: 100%;
+	max-width: 640px;
+	margin: 0 auto;
+	padding: 0 var(--space-md) var(--space-xl);
+}
+
+.page-header {
+	display: flex;
+	align-items: center;
+	gap: var(--space-md);
+	padding: var(--space-md);
+}
+.page-header h2 { color: var(--text-dark); }
+
+/* Small uppercase labels: AI, OUT, HOST */
+.badge {
+	display: inline-block;
+	padding: 1px var(--space-xs);
+	border-radius: var(--radius-xs);
+	background: var(--text-muted);
+	color: var(--text-on-color);
+	font-size: var(--font-size-2xs);
+	line-height: var(--line-height-tight);
+	letter-spacing: var(--letter-spacing-wide);
+	font-weight: 700;
+	vertical-align: middle;
+}
+.badge-danger { background: var(--score-negative); }
+.badge-primary { background: var(--btn-primary-bg); }
+.badge-pill { border-radius: var(--radius-full); padding-inline: var(--space-sm); }
+
+/* Player colour dot; set data-player on it or an ancestor */
+.player-dot {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: var(--radius-full);
+	background: var(--player);
+	flex-shrink: 0;
+}
+
+/* Player colour picker swatch; set data-player on the swatch */
+.color-swatch {
+	width: 36px;
+	height: 36px;
+	min-width: 36px;
+	min-height: 36px;
+	border-radius: var(--radius-full);
+	border: 3px solid transparent;
+	background: var(--player);
+	transition: all var(--transition-fast);
+}
+.color-swatch.selected {
+	border-color: var(--text-dark);
+	box-shadow: 0 0 0 2px var(--text-on-color) inset;
+}
+.color-swatch.taken {
+	opacity: 0.3;
+	cursor: not-allowed;
 }
 
 /* Reduced motion */

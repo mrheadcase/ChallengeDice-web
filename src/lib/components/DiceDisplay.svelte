@@ -25,21 +25,27 @@
 	let rollingInterval: ReturnType<typeof setInterval> | null = null;
 	let prevRolling = false;
 
-	const PAIR1_COLOR = '#1565C0'; // blue
-	const PAIR2_COLOR = '#2E7D32'; // green
-	const FIFTH_COLOR = '#E65100'; // orange
+	// Role each die plays in the selected combination; colours come from the .role-* classes
+	type DieRole = 'pair1' | 'pair2' | 'fifth';
 
-	function getDiceHighlights(values: number[], combo: DiceCombination | null | undefined): (string | null)[] {
+	// Caption for each group, anchored to the die that lands in the group's first slot
+	const GROUP_LABELS: Record<number, { text: string; role: DieRole; dice: number }> = {
+		0: { text: 'Pair 1', role: 'pair1', dice: 2 },
+		2: { text: 'Pair 2', role: 'pair2', dice: 2 },
+		4: { text: '5th', role: 'fifth', dice: 1 },
+	};
+
+	function getDiceHighlights(values: number[], combo: DiceCombination | null | undefined): (DieRole | null)[] {
 		if (!combo) return values.map(() => null);
 
-		const colors: (string | null)[] = values.map(() => null);
+		const roles: (DieRole | null)[] = values.map(() => null);
 		const used: boolean[] = values.map(() => false);
 
 		// Match pair 1
 		for (const dieValue of [combo.pair1Dice[0], combo.pair1Dice[1]]) {
 			for (let i = 0; i < values.length; i++) {
 				if (!used[i] && values[i] === dieValue) {
-					colors[i] = PAIR1_COLOR;
+					roles[i] = 'pair1';
 					used[i] = true;
 					break;
 				}
@@ -49,7 +55,7 @@
 		for (const dieValue of [combo.pair2Dice[0], combo.pair2Dice[1]]) {
 			for (let i = 0; i < values.length; i++) {
 				if (!used[i] && values[i] === dieValue) {
-					colors[i] = PAIR2_COLOR;
+					roles[i] = 'pair2';
 					used[i] = true;
 					break;
 				}
@@ -58,21 +64,21 @@
 		// Match 5th die
 		for (let i = 0; i < values.length; i++) {
 			if (!used[i] && values[i] === combo.fifthDie) {
-				colors[i] = FIFTH_COLOR;
+				roles[i] = 'fifth';
 				used[i] = true;
 				break;
 			}
 		}
 
-		return colors;
+		return roles;
 	}
 
 	// Compute regrouped order: pair1 dice, pair2 dice, fifth die, then any unmatched
-	function getRegroupedOrder(highlights: (string | null)[]): number[] {
+	function getRegroupedOrder(highlights: (DieRole | null)[]): number[] {
 		const order: number[] = [];
-		highlights.forEach((c, i) => { if (c === PAIR1_COLOR) order.push(i); });
-		highlights.forEach((c, i) => { if (c === PAIR2_COLOR) order.push(i); });
-		highlights.forEach((c, i) => { if (c === FIFTH_COLOR) order.push(i); });
+		highlights.forEach((r, i) => { if (r === 'pair1') order.push(i); });
+		highlights.forEach((r, i) => { if (r === 'pair2') order.push(i); });
+		highlights.forEach((r, i) => { if (r === 'fifth') order.push(i); });
 		highlights.forEach((_, i) => { if (!order.includes(i)) order.push(i); });
 		return order;
 	}
@@ -81,7 +87,7 @@
 	let hasCombo = $derived(diceHighlights.some(c => c !== null));
 
 	// Map each original index to its target slot position
-	function getTargetSlots(highlights: (string | null)[]): number[] {
+	function getTargetSlots(highlights: (DieRole | null)[]): number[] {
 		const order = getRegroupedOrder(highlights);
 		const slots = Array(5).fill(0);
 		order.forEach((origIdx, slot) => { slots[origIdx] = slot; });
@@ -170,42 +176,37 @@
 
 <div class="dice-row" class:rolling>
 	{#each Array(5) as _, i}
-		{@const highlight = diceHighlights[i]}
+		{@const role = diceHighlights[i]}
+		{@const groupLabel = hasCombo && role ? GROUP_LABELS[targetSlots[i]] : undefined}
+		<!-- Entrance stagger and regroup offset are computed per die, so they stay inline -->
 		<div
-			class="die-wrapper"
+			class="die-wrapper {role ? `role-${role}` : ''}"
 			class:settled={!rolling || i < settledCount}
 			class:offscreen={enteringDice && i >= enteredCount}
 			class:entering={enteringDice && i < enteredCount}
-			style="animation-delay: {i * 80}ms; transform: translateX({getTranslateX(i)}px)"
+			style:animation-delay="{i * 80}ms"
+			style:transform="translateX({getTranslateX(i)}px)"
 		>
-			<DiceView
-				value={displayValue(i)}
-				size={diceSize}
-				rotationDegrees={rotation(i)}
-				borderColor={highlight ?? '#555555'}
-				backgroundColor={highlight ? `color-mix(in srgb, ${highlight} 15%, #FFFFFF)` : '#FFFFFF'}
-			/>
+			<DiceView value={displayValue(i)} size={diceSize} rotationDegrees={rotation(i)} />
+			{#if groupLabel}
+				<span class="group-label" class:span-2={groupLabel.dice === 2}>{groupLabel.text}</span>
+			{/if}
 		</div>
 	{/each}
 </div>
-{#if hasCombo}
-	<div class="dice-legend">
-		<span class="legend-item" style="color: {PAIR1_COLOR}">Pair 1</span>
-		<span class="legend-item" style="color: {PAIR2_COLOR}">Pair 2</span>
-		<span class="legend-item" style="color: {FIFTH_COLOR}">5th</span>
-	</div>
-{/if}
 
 <style>
+	/* Bottom padding always reserves the caption line so selecting a combo doesn't shift the layout */
 	.dice-row {
 		display: flex;
-		gap: 8px;
+		gap: var(--space-sm);
 		justify-content: center;
 		align-items: center;
-		padding: 8px;
+		padding-bottom: var(--space-md);
 	}
 
 	.die-wrapper {
+		position: relative;
 		transition: transform 400ms ease, opacity 300ms ease;
 	}
 
@@ -233,17 +234,31 @@
 		75% { transform: translateY(4px) rotate(5deg); }
 	}
 
-	.dice-legend {
-		display: flex;
-		justify-content: center;
-		gap: 16px;
-		font-size: var(--font-size-xs);
-		font-weight: 700;
+	/* Die colours for each role in the selected combination — same colours as the combo chips */
+	.role-pair1 { --role: var(--combo-pair1); }
+	.role-pair2 { --role: var(--combo-pair2); }
+	.role-fifth { --role: var(--combo-fifth); }
+
+	.die-wrapper[class*='role-'] {
+		--die-edge: var(--role);
+		--die-face: color-mix(in srgb, var(--role) 15%, var(--die-white));
 	}
 
-	.legend-item {
-		display: flex;
-		align-items: center;
-		gap: 4px;
+	/* Spans its group: one die, or two dice plus the gap between them */
+	.group-label {
+		position: absolute;
+		top: calc(100% + var(--space-xs));
+		left: 0;
+		width: 100%;
+		text-align: center;
+		color: var(--role);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		line-height: 1;
+		white-space: nowrap;
+	}
+
+	.group-label.span-2 {
+		width: calc(200% + var(--space-sm));
 	}
 </style>

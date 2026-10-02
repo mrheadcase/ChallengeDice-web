@@ -1,8 +1,9 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { localGame } from '$lib/stores/localGame.svelte';
-	import { PLAYER_COLORS, AI_BOT_NAMES } from '$lib/game/constants';
+	import { AI_BOT_NAMES } from '$lib/game/constants';
 	import { sanitizeName } from '$lib/utils/validation';
 	import type { PlayerColor, AiDifficulty, PlayerSetup } from '$lib/game/models';
 	import { PLAYER_COLOR_DEFAULTS } from '$lib/game/models';
@@ -133,10 +134,7 @@
 </script>
 
 <div class="setup-page">
-	<header class="setup-header">
-		<button class="back-btn" onclick={() => goto(base || '/')}>← Back</button>
-		<h2>New Game</h2>
-	</header>
+	<PageHeader title="New Game" flush onback={() => goto(base || '/')} />
 
 	<div class="player-count">
 		<span>Players:</span>
@@ -153,10 +151,9 @@
 
 	<div class="players-list">
 		{#each players as player, i}
-			{@const colors = PLAYER_COLORS[player.color]}
-			<div class="player-card" style:border-color={colors.primary}>
+			<div class="player-card" data-player={player.color}>
 				<div class="player-header">
-					<span class="player-number" style:background={colors.primary} style:color={colors.onPrimary}>
+					<span class="player-number">
 						P{i + 1}
 					</span>
 					<input
@@ -173,13 +170,12 @@
 						<span class="option-label">Color:</span>
 						<div class="color-picker">
 							{#each PLAYER_COLOR_DEFAULTS as color}
-								{@const cs = PLAYER_COLORS[color]}
 								{@const taken = color !== player.color && usedColors().has(color)}
 								<button
 									class="color-swatch"
 									class:selected={player.color === color}
 									class:taken
-									style:background={cs.primary}
+									data-player={color}
 									onclick={() => { if (!taken) player.color = color; }}
 									disabled={taken}
 									aria-label={color}
@@ -209,7 +205,7 @@
 		{/each}
 	</div>
 
-	<button class="start-btn" onclick={startGame}>
+	<button class="btn btn-primary btn-lg btn-block start-btn" onclick={startGame}>
 		Start Game
 	</button>
 </div>
@@ -218,28 +214,10 @@
 	.setup-page {
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
+		gap: var(--space-md);
 		height: 100%;
-		padding: 16px;
+		padding: var(--space-md);
 		overflow-y: auto;
-	}
-
-	.setup-header {
-		display: flex;
-		align-items: center;
-		gap: 16px;
-	}
-
-	.back-btn {
-		color: var(--gold-amber);
-		font-weight: 600;
-		font-size: var(--font-size-base);
-		padding: 8px;
-	}
-
-	h2 {
-		font-size: var(--font-size-xl);
-		color: var(--text-dark);
 	}
 
 	.player-count {
@@ -251,7 +229,7 @@
 
 	.count-buttons {
 		display: flex;
-		gap: 8px;
+		gap: var(--space-sm);
 	}
 
 	.count-btn {
@@ -267,7 +245,7 @@
 
 	.count-btn.active {
 		background: var(--gold-amber);
-		color: white;
+		color: var(--text-on-color);
 		border-color: var(--gold-amber);
 	}
 
@@ -286,7 +264,7 @@
 
 	.player-card {
 		background: var(--card-bg);
-		border: 2px solid;
+		border: 2px solid var(--player);
 		border-radius: var(--radius-lg);
 		padding: 12px;
 	}
@@ -294,14 +272,16 @@
 	.player-header {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		margin-bottom: 8px;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-sm);
 	}
 
 	.player-number {
 		width: 32px;
 		height: 32px;
-		border-radius: 50%;
+		border-radius: var(--radius-full);
+		background: var(--player);
+		color: var(--text-on-color);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -312,7 +292,7 @@
 
 	.name-input {
 		flex: 1;
-		padding: 8px 12px;
+		padding: var(--space-sm) 12px;
 		border: 1px solid var(--warm-tan);
 		border-radius: var(--radius-md);
 		font-size: var(--font-size-base);
@@ -327,13 +307,13 @@
 	.player-options {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: var(--space-sm);
 	}
 
 	.option-row {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: var(--space-sm);
 	}
 
 	.option-label {
@@ -347,24 +327,12 @@
 		gap: 6px;
 	}
 
+	/* Slightly smaller than the global swatch so four fit beside the label */
 	.color-swatch {
 		width: 32px;
 		height: 32px;
 		min-width: 32px;
 		min-height: 32px;
-		border-radius: 50%;
-		border: 3px solid transparent;
-		transition: all var(--transition-fast);
-	}
-
-	.color-swatch.selected {
-		border-color: var(--text-dark);
-		box-shadow: 0 0 0 2px white inset;
-	}
-
-	.color-swatch.taken {
-		opacity: 0.3;
-		cursor: not-allowed;
 	}
 
 	.ai-toggle {
@@ -391,47 +359,37 @@
 		min-height: 36px;
 	}
 
+	/* Pinned to the bottom of the page */
 	.start-btn {
-		background: var(--btn-primary-bg);
-		color: var(--btn-primary-text);
-		padding: 16px;
-		border-radius: var(--radius-lg);
-		font-weight: 700;
-		font-size: var(--font-size-lg);
-		box-shadow: 0 2px 8px rgba(196, 122, 16, 0.3);
+		padding: var(--space-md);
 		margin-top: auto;
 	}
-
-	.start-btn:hover { background: #A86400; }
 
 	/* Landscape on phones — compact to fit the short viewport */
 	@media (orientation: landscape) and (max-height: 500px) {
 		.setup-page {
-			gap: 8px;
-			padding: 8px 12px;
+			gap: var(--space-sm);
+			padding: var(--space-sm) 12px;
 		}
-		.setup-header { gap: 8px; }
-		h2 { font-size: var(--font-size-lg); }
-		.back-btn { padding: 4px 8px; font-size: var(--font-size-sm); }
 
-		.player-count { gap: 8px; font-size: var(--font-size-sm); }
+		.player-count { gap: var(--space-sm); font-size: var(--font-size-sm); }
 		.count-btn { width: 36px; height: 36px; font-size: var(--font-size-base); }
 
 		.players-list {
 			display: grid;
 			grid-template-columns: 1fr 1fr;
-			gap: 8px;
+			gap: var(--space-sm);
 		}
 
-		.player-card { padding: 8px; }
-		.player-header { margin-bottom: 4px; gap: 6px; }
+		.player-card { padding: var(--space-sm); }
+		.player-header { margin-bottom: var(--space-xs); gap: 6px; }
 		.player-number { width: 26px; height: 26px; font-size: var(--font-size-xs); }
-		.name-input { padding: 5px 8px; font-size: var(--font-size-sm); }
-		.player-options { gap: 4px; }
+		.name-input { padding: 5px var(--space-sm); font-size: var(--font-size-sm); }
+		.player-options { gap: var(--space-xs); }
 		.option-row { gap: 6px; }
 		.option-label { min-width: 44px; font-size: var(--font-size-xs); }
 		.color-swatch { width: 24px; height: 24px; min-width: 24px; min-height: 24px; border-width: 2px; }
-		.color-picker { gap: 4px; }
+		.color-picker { gap: var(--space-xs); }
 		.ai-toggle { font-size: var(--font-size-xs); }
 		.ai-toggle input { width: 14px; height: 14px; }
 		.difficulty-select { padding: 3px 6px; font-size: var(--font-size-xs); min-height: 28px; }

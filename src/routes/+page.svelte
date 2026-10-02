@@ -10,163 +10,210 @@
 	});
 </script>
 
-<div class="main-menu">
-	<div class="bg-image" style="background-image: url('{base}/splash_screen.webp')"></div>
-	<div class="bg-overlay"></div>
+<div class="main-menu" style:--splash="url('{base}/splash_screen.webp')">
+	<!-- Blurred copy fills any space around the uncropped poster -->
+	<div class="backdrop" aria-hidden="true"></div>
+	<!-- The poster carries the title, art, and tagline; it is never cropped -->
+	<img class="poster" src="{base}/splash_screen.webp" alt="" />
 
 	<div class="menu-content">
-		<div class="logo-section">
-			<div class="title-spacer"></div>
-			<img
-				src="{base}/dice_icon.png"
-				alt="Five colored dice"
-				class="dice-icon"
-			/>
-		</div>
+		<h1 class="sr-only">Challenge Dice</h1>
 
-		<nav class="menu-buttons">
+		<!-- Desktop only: tops the menu column beside the poster -->
+		<img class="dice-icon" src="{base}/dice_icon.png" alt="" />
+
+		<!-- One primary action: Resume when a game is saved, otherwise New Local Game -->
+		<nav class="menu-buttons" aria-label="Play">
 			{#if hasSaved}
-				<button class="menu-btn primary" onclick={() => { localGame.resumeGame(); goto(`${base}/play/game`); }}>
+				<button class="btn btn-primary btn-lg menu-btn" onclick={() => { localGame.resumeGame(); goto(`${base}/play/game`); }}>
 					Resume Game
 				</button>
 			{/if}
-			<button class="menu-btn primary" onclick={() => goto(`${base}/play/setup`)}>
+			<button
+				class="btn menu-btn"
+				class:btn-primary={!hasSaved}
+				class:btn-lg={!hasSaved}
+				class:quiet={hasSaved}
+				onclick={() => goto(`${base}/play/setup`)}
+			>
 				New Local Game
 			</button>
-			<button class="menu-btn secondary" onclick={() => goto(`${base}/online`)}>
+			<button class="btn btn-secondary menu-btn compact" onclick={() => goto(`${base}/online`)}>
 				Online Game
 			</button>
 		</nav>
 
-		<div class="nav-grid">
-			<button class="nav-link" onclick={() => goto(`${base}/settings`)}>Settings</button>
-			<button class="nav-link" onclick={() => goto(`${base}/stats`)}>Stats</button>
+		<nav class="nav-links" aria-label="More">
 			<button class="nav-link" onclick={() => goto(`${base}/rules`)}>Rules</button>
+			<button class="nav-link" onclick={() => goto(`${base}/stats`)}>Stats</button>
+			<button class="nav-link" onclick={() => goto(`${base}/settings`)}>Settings</button>
 			<button class="nav-link" onclick={() => goto(`${base}/about`)}>About</button>
-		</div>
+		</nav>
 	</div>
 </div>
 
 <style>
+	/*
+	 * Portrait: the poster spans the screen width (so the title is never clipped) and
+	 * the menu fills the space below it. On screens too short for both, the menu keeps
+	 * its natural height (with or without Resume) and the poster shrinks into the rest,
+	 * centred over a blurred copy of itself.
+	 */
 	.main-menu {
 		position: relative;
 		height: 100%;
 		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		background: var(--chrome-bg);
 	}
 
-	.bg-image {
+	.backdrop {
 		position: absolute;
-		inset: 0;
-		background-size: cover;
-		background-position: center top;
-		background-repeat: no-repeat;
+		inset: -40px;
+		background: var(--splash) center / cover no-repeat;
+		filter: blur(28px) brightness(0.35);
 	}
 
-	.bg-overlay {
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(
-			180deg,
-			rgba(0, 0, 0, 0.45) 0%,
-			rgba(0, 0, 0, 0.6) 40%,
-			rgba(0, 0, 0, 0.75) 100%
-		);
+	.poster {
+		position: relative;
+		align-self: center;
+		/*
+		 * Always spans the full width. When the screen is too short for the whole poster
+		 * plus the menu, its box gets shorter and cover crops it: mostly the tiled floor
+		 * below the tagline (~bottom 15% of the art), with a little of the sky above the title.
+		 */
+		width: 100%;
+		aspect-ratio: 2 / 3;
+		height: auto;
+		min-height: 0;
+		flex: 0 1 auto;
+		object-fit: cover;
+		object-position: 50% 30%;
+		/* Soften the bottom edge into the menu area, short enough to leave the tagline alone */
+		mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent 100%);
 	}
 
 	.menu-content {
 		position: relative;
 		z-index: 1;
+		flex: 1 0 auto;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 28px;
-		height: 100%;
-		padding: 24px;
+		gap: var(--space-sm);
+		padding: var(--space-sm) var(--space-md) max(var(--space-sm), env(safe-area-inset-bottom));
 	}
 
-	.logo-section {
-		text-align: center;
-	}
-
-	.title-spacer {
-		height: 3rem;
-		line-height: 1.1;
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
 	}
 
 	.dice-icon {
-		width: 180px;
+		display: none;
+		width: 160px;
 		height: auto;
-		margin-top: 12px;
 		filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
 	}
 
 	.menu-buttons {
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
+		gap: var(--space-sm);
 		width: 100%;
 		max-width: 320px;
 	}
 
+	/* Shared .btn styles; the menu only tightens padding and gives the primary a stronger glow */
 	.menu-btn {
-		padding: 14px 24px;
-		border-radius: var(--radius-lg);
-		font-weight: 700;
-		font-size: var(--font-size-lg);
-		transition: all var(--transition-fast);
+		padding: 12px var(--space-lg);
 	}
 
-	.menu-btn.primary {
-		background: var(--btn-primary-bg);
-		color: var(--btn-primary-text);
-		box-shadow: 0 2px 12px rgba(196, 122, 16, 0.4);
+	.menu-btn.btn-primary {
+		box-shadow: var(--shadow-primary-strong);
 	}
-	.menu-btn.primary:hover { background: var(--btn-primary-hover); }
 
-	.menu-btn.secondary {
-		background: var(--btn-secondary-bg);
-		color: var(--btn-secondary-text);
-		box-shadow: 0 2px 12px rgba(107, 63, 160, 0.4);
+	/* One size below the primary: Online Game, and New Local Game when Resume is shown */
+	.menu-btn.compact,
+	.menu-btn.quiet {
+		padding: 10px var(--space-lg);
 	}
-	.menu-btn.secondary:hover { opacity: 0.9; }
 
-	.nav-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 8px 16px;
+	/* New Local Game when Resume is the primary: translucent outline over the dark backdrop */
+	.menu-btn.quiet {
+		background: color-mix(in srgb, var(--chrome-bg) 55%, transparent);
+		color: var(--chrome-text);
+		border: 1px solid color-mix(in srgb, var(--chrome-accent) 45%, transparent);
+	}
+	.menu-btn.quiet:hover {
+		background: color-mix(in srgb, var(--chrome-bg) 75%, transparent);
+		border-color: var(--chrome-accent);
+	}
+
+	.nav-links {
+		display: flex;
+		justify-content: center;
+		gap: var(--space-xs);
 		width: 100%;
-		max-width: 280px;
+		max-width: 320px;
 	}
 
 	.nav-link {
-		color: rgba(255, 255, 255, 0.7);
-		font-size: var(--font-size-base);
+		flex: 1;
+		color: color-mix(in srgb, var(--chrome-text) 85%, transparent);
+		font-size: var(--font-size-sm);
 		font-weight: 600;
-		padding: 8px 12px;
-		text-align: center;
+		border-radius: var(--radius-md);
 	}
-	.nav-link:hover { color: #F0D590; }
+	.nav-link:hover {
+		color: var(--chrome-accent);
+		background: var(--chrome-hover);
+	}
 
-	/* Landscape on phones — put the logo on the left, menu on the right */
-	@media (orientation: landscape) and (max-height: 500px) {
-		.menu-content {
-			display: grid;
-			grid-template-columns: auto minmax(240px, 360px);
-			grid-template-areas:
-				"logo buttons"
-				"logo nav";
-			gap: 8px 32px;
-			padding: 12px 24px;
-			align-items: center;
+	/* Wide screens and landscape: full-height poster with the menu beside it */
+	@media (min-aspect-ratio: 1/1) and (min-width: 640px) {
+		.main-menu {
+			flex-direction: row;
 			justify-content: center;
+			align-items: center;
+			gap: var(--space-xl);
+			padding-inline: var(--space-lg);
 		}
-		.logo-section { grid-area: logo; }
-		.menu-buttons { grid-area: buttons; align-self: end; max-width: none; gap: 8px; }
-		.nav-grid { grid-area: nav; align-self: start; max-width: none; gap: 4px 16px; }
-		.title-spacer { display: none; }
-		.dice-icon { width: 140px; margin-top: 0; }
-		.menu-btn { padding: 10px 20px; font-size: var(--font-size-base); }
-		.nav-link { padding: 4px 8px; font-size: var(--font-size-sm); }
+
+		.poster {
+			width: auto;
+			height: 100%;
+			mask-image: none;
+			box-shadow: 0 0 48px rgba(0, 0, 0, 0.5);
+		}
+
+		.menu-content {
+			flex: none;
+			width: 320px;
+			padding: 0;
+		}
+
+		.dice-icon {
+			display: block;
+			margin-bottom: var(--space-sm);
+		}
+	}
+
+	/* Landscape phones: compact controls to fit the short height */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.main-menu { gap: var(--space-lg); }
+		.menu-content { gap: var(--space-sm); width: 280px; }
+		.menu-buttons { gap: var(--space-xs); }
+		.menu-btn { padding: 10px var(--space-md); font-size: var(--font-size-base); line-height: var(--line-height-base); }
+		.menu-btn.compact, .menu-btn.quiet { padding: var(--space-sm) var(--space-md); }
+		.nav-link { min-height: 36px; }
+		/* No room for the dice icon on short landscape screens */
+		.dice-icon { display: none; }
 	}
 </style>

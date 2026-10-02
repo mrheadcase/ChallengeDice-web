@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { DiceCombination, Scorecard } from '$lib/game/models';
 	import type { ComboSize } from '$lib/stores/preferences.svelte';
-	import { getInvalidReason } from '$lib/game/logic';
+	import { applySelection, calculateScore, getInvalidReason } from '$lib/game/logic';
+	import DiceView from './DiceView.svelte';
 
 	interface Props {
 		combination: DiceCombination;
@@ -21,8 +22,24 @@
 		oninvalidselect,
 	}: Props = $props();
 
+	// 5th-die face size per card size, roughly matching the chip text height
+	const DIE_SIZE: Record<ComboSize, number> = {
+		small: 13,
+		medium: 15,
+		large: 17,
+		extra_large: 21,
+	};
+
 	let invalidReason = $derived(getInvalidReason(combination, scorecard));
 	let isValid = $derived(!invalidReason);
+
+	// How much this combination would change the player's total score
+	let impact = $derived(
+		isValid
+			? calculateScore(applySelection(scorecard, combination)).totalScore - calculateScore(scorecard).totalScore
+			: 0
+	);
+	let impactText = $derived(impact > 0 ? `+${impact} pts` : impact < 0 ? `−${Math.abs(impact)} pts` : '0 pts');
 
 	function handleClick() {
 		if (isValid) {
@@ -38,17 +55,21 @@
 	class:selected
 	class:invalid={!isValid}
 	onclick={handleClick}
-	aria-label="Pair {combination.pair1Sum} and {combination.pair2Sum}, fifth die {combination.fifthDie}"
+	aria-label="Pair {combination.pair1Sum} and {combination.pair2Sum}, fifth die {combination.fifthDie}, {isValid ? impactText : invalidReason}"
 >
-	<div class="pair-sums">
-		<span class="pair1">{combination.pair1Sum}</span>
-		<span class="separator">+</span>
-		<span class="pair2">{combination.pair2Sum}</span>
-	</div>
-	<div class="fifth">
-		<span class="fifth-label">5th</span>
-		<span class="fifth-value">{combination.fifthDie}</span>
-	</div>
+	<!-- Role chips: pair 1 (blue), pair 2 (green), 5th die (orange) — same colours as the dice highlights -->
+	<span class="chips">
+		<span class="chip pair1">{combination.pair1Sum}</span>
+		<span class="chip pair2">{combination.pair2Sum}</span>
+		<span class="chip fifth">
+			<DiceView value={combination.fifthDie} size={DIE_SIZE[size]} />
+		</span>
+	</span>
+	{#if isValid}
+		<span class="impact" class:gain={impact > 0} class:loss={impact < 0}>{impactText}</span>
+	{:else}
+		<span class="reason">{invalidReason}</span>
+	{/if}
 </button>
 
 <style>
@@ -56,93 +77,90 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 2px;
-		padding: 8px;
+		gap: var(--space-xs);
+		padding: 6px;
 		border: 2px solid var(--warm-tan);
 		border-radius: var(--radius-md);
 		background: var(--card-bg);
 		cursor: pointer;
 		transition: all var(--transition-fast);
-		min-width: fit-content;
+		width: 100%;
+		line-height: var(--line-height-tight);
+		font-variant-numeric: tabular-nums;
+		--chip-font: var(--font-size-base);
 	}
 
-	.combo-card:hover:not(:disabled) {
+	.combo-card:hover:not(.invalid) {
 		border-color: var(--gold-amber);
-		box-shadow: 0 2px 8px rgba(196, 122, 16, 0.2);
+		box-shadow: var(--shadow-primary);
 	}
 
 	.combo-card.selected {
 		border-color: var(--gold-amber);
 		background: var(--pale-gold);
-		box-shadow: 0 2px 12px rgba(196, 122, 16, 0.3);
+		box-shadow: var(--shadow-primary-strong);
 	}
 
+	/* Unavailable: dashed outline and a visible reason instead of fading the whole card */
 	.combo-card.invalid {
-		opacity: 0.5;
 		cursor: not-allowed;
+		border-style: dashed;
+		background: transparent;
 	}
 
-	.pair-sums {
+	.invalid .chips {
+		opacity: 0.45;
+	}
+
+	.chips {
 		display: flex;
+		gap: 3px;
+	}
+
+	.chip {
+		display: inline-flex;
 		align-items: center;
-		gap: 4px;
-		font-weight: 700;
-		font-size: var(--font-size-lg);
-	}
-
-	.pair1 { color: #1565C0; }
-	.pair2 { color: #2E7D32; }
-	.separator { color: var(--text-muted); font-weight: 400; }
-
-	.fifth {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-		font-size: var(--font-size-sm);
-	}
-
-	.fifth-label {
-		color: var(--text-muted);
-		font-size: var(--font-size-xs);
-	}
-
-	.fifth-value {
-		color: #E65100;
+		justify-content: center;
+		min-width: 1.6em;
+		height: 1.5em;
+		padding: 0 var(--space-xs);
+		border-radius: var(--radius-sm);
+		font-size: var(--chip-font);
 		font-weight: 700;
 	}
 
+	.chip.pair1 {
+		color: var(--combo-pair1);
+		background: color-mix(in srgb, var(--combo-pair1) 16%, transparent);
+	}
+
+	.chip.pair2 {
+		color: var(--combo-pair2);
+		background: color-mix(in srgb, var(--combo-pair2) 16%, transparent);
+	}
+
+	.chip.fifth {
+		--die-edge: var(--combo-fifth);
+		min-width: 1.5em;
+		padding: 0 3px;
+		background: color-mix(in srgb, var(--combo-fifth) 20%, transparent);
+	}
+
+	.impact,
 	.reason {
-		font-size: 10px;
-		color: var(--score-negative);
-		text-align: center;
-		line-height: 1.2;
+		font-size: var(--font-size-2xs);
+		font-weight: 600;
+		color: var(--text-medium);
+		white-space: nowrap;
 	}
 
-	/* Size variants */
-	.combo-card.size-small {
-		padding: 4px;
-		gap: 1px;
-		min-width: 60px;
-	}
-	.size-small .pair-sums { font-size: var(--font-size-sm); gap: 2px; }
-	.size-small .fifth { font-size: var(--font-size-xs); }
-	.size-small .fifth-label { font-size: 9px; }
+	.impact.gain { color: var(--score-positive); }
+	.impact.loss { color: var(--score-negative); }
 
-	.combo-card.size-medium {
-		padding: 6px;
-		min-width: 70px;
-	}
-	.size-medium .pair-sums { font-size: var(--font-size-base); }
-	.size-medium .fifth { font-size: var(--font-size-xs); }
-
-	/* large is the default — no overrides needed */
-
-	.combo-card.size-extra_large {
-		padding: 12px;
-		gap: 4px;
-		min-width: 110px;
-	}
-	.size-extra_large .pair-sums { font-size: var(--font-size-xl); gap: 6px; }
-	.size-extra_large .fifth { font-size: var(--font-size-base); gap: 6px; }
-	.size-extra_large .fifth-label { font-size: var(--font-size-sm); }
+	/* Size variants — chip text steps through the type scale (xs / sm / base / lg) */
+	.size-small { --chip-font: var(--font-size-xs); padding: var(--space-xs); }
+	.size-medium { --chip-font: var(--font-size-sm); padding: 5px; }
+	.size-extra_large { --chip-font: var(--font-size-lg); padding: var(--space-sm); }
+	.size-extra_large .impact,
+	.size-extra_large .reason { font-size: var(--font-size-xs); }
 </style>

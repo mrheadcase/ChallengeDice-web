@@ -34,7 +34,7 @@
 		align-items: center;
 		justify-content: center;
 		z-index: 100;
-		padding: 16px;
+		padding: var(--space-md);
 	}
 
 	.dialog {
@@ -45,14 +45,14 @@
 		max-height: 85vh;
 		display: flex;
 		flex-direction: column;
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+		box-shadow: var(--shadow-overlay);
 	}
 
 	.dialog-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 16px 20px 8px;
+		padding: var(--space-md) 20px var(--space-sm);
 		flex-shrink: 0;
 	}
 
@@ -66,7 +66,7 @@
 		width: 36px;
 		height: 36px;
 		min-height: 36px;
-		border-radius: 50%;
+		border-radius: var(--radius-full);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -82,7 +82,7 @@
 	}
 
 	.dialog-body {
-		padding: 8px 20px 20px;
+		padding: var(--space-sm) 20px 20px;
 		overflow-y: auto;
 	}
 </style>
