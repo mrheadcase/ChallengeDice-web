@@ -29,11 +29,18 @@
 	type DieRole = 'pair1' | 'pair2' | 'fifth';
 
 	// Caption for each group, anchored to the die that lands in the group's first slot
-	const GROUP_LABELS: Record<number, { text: string; role: DieRole; dice: number }> = {
-		0: { text: 'Pair 1', role: 'pair1', dice: 2 },
-		2: { text: 'Pair 2', role: 'pair2', dice: 2 },
-		4: { text: '5th', role: 'fifth', dice: 1 },
+	const GROUP_LABELS: Record<number, { role: DieRole; dice: number }> = {
+		0: { role: 'pair1', dice: 2 },
+		2: { role: 'pair2', dice: 2 },
+		4: { role: 'fifth', dice: 1 },
 	};
+
+	// Pairs are labelled with their sum — the scorecard row they mark, as on the combo chips
+	function groupText(role: DieRole): string {
+		if (role === 'pair1') return String(selectedCombination?.pair1Sum ?? '');
+		if (role === 'pair2') return String(selectedCombination?.pair2Sum ?? '');
+		return '5th';
+	}
 
 	function getDiceHighlights(values: number[], combo: DiceCombination | null | undefined): (DieRole | null)[] {
 		if (!combo) return values.map(() => null);
@@ -189,7 +196,7 @@
 		>
 			<DiceView value={displayValue(i)} size={diceSize} rotationDegrees={rotation(i)} />
 			{#if groupLabel}
-				<span class="group-label" class:span-2={groupLabel.dice === 2}>{groupLabel.text}</span>
+				<span class="group-label" class:span-2={groupLabel.dice === 2}>{groupText(groupLabel.role)}</span>
 			{/if}
 		</div>
 	{/each}
@@ -244,16 +251,24 @@
 		--die-face: color-mix(in srgb, var(--role) 15%, var(--die-white));
 	}
 
-	/* Spans its group: one die, or two dice plus the gap between them */
+	/*
+	 * A pill spanning its group: one die, or two dice plus the gap between them. 14px tall
+	 * at 2px below the dice, so it fits the caption line the row reserves.
+	 */
 	.group-label {
 		position: absolute;
-		top: calc(100% + var(--space-xs));
+		top: calc(100% + var(--space-2xs));
 		left: 0;
 		width: 100%;
-		text-align: center;
+		height: 14px;
+		display: grid;
+		place-items: center;
+		border-radius: var(--radius-full);
+		background: color-mix(in srgb, var(--role) 18%, transparent);
 		color: var(--role);
+		font-family: var(--font-numeric);
 		font-size: var(--font-size-xs);
-		font-weight: 600;
+		font-weight: 700;
 		line-height: 1;
 		white-space: nowrap;
 	}

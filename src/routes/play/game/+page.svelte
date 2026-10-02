@@ -10,6 +10,7 @@
 	import EliminationDialog from '$lib/components/EliminationDialog.svelte';
 	import SettingsDialog from '$lib/components/SettingsDialog.svelte';
 	import type { DiceCombination } from '$lib/game/models';
+	import { applySelection, calculateScore } from '$lib/game/logic';
 	import { preferences } from '$lib/stores/preferences.svelte';
 	import { playRollingSound, playShakingSound, tryVibrate } from '$lib/utils/sounds';
 	import { boardDiceSize } from '$lib/utils/boardLayout';
@@ -26,6 +27,14 @@
 
 	let gameState = $derived(localGame.gameState);
 	let currentPlayer = $derived(gameState.players[gameState.currentPlayerIndex]);
+
+	// How much the selected combination changes the current player's total, signed for the button
+	let movePoints = $derived.by(() => {
+		if (!selectedCombo || !currentPlayer) return '';
+		const sc = currentPlayer.scorecard;
+		const d = calculateScore(applySelection(sc, selectedCombo)).totalScore - calculateScore(sc).totalScore;
+		return d > 0 ? `+${d}` : d < 0 ? `−${Math.abs(d)}` : '0';
+	});
 	let viewingPlayer = $derived(gameState.players[viewingPlayerIndex]);
 
 	// Track eliminations — use untrack to avoid read/write cycle on prevActiveIds
@@ -178,7 +187,7 @@
 			{#if !localGame.isCurrentPlayerAI()}
 				<div class="score-bar">
 					{#if selectedCombo}
-						<button class="btn btn-primary btn-block score-btn" onclick={scoreIt}>Score It</button>
+						<button class="btn btn-primary btn-block score-btn" onclick={scoreIt}>Score It <span class="move-points">{movePoints}</span></button>
 					{:else}
 						<p class="score-hint">Tap a combination to preview it on your scorecard</p>
 					{/if}
@@ -234,6 +243,13 @@
 		font-size: var(--font-size-sm);
 		line-height: var(--line-height-sm);
 		text-align: center;
+	}
+
+	.move-points {
+		font-family: var(--font-numeric);
+		padding: 1px var(--space-sm);
+		border-radius: var(--radius-md);
+		background: rgba(0, 0, 0, 0.14);
 	}
 
 	.score-btn {

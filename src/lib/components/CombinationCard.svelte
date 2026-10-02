@@ -125,6 +125,7 @@
 		height: 1.5em;
 		padding: 0 var(--space-xs);
 		border-radius: var(--radius-sm);
+		font-family: var(--font-numeric);
 		font-size: var(--chip-font);
 		font-weight: 700;
 	}
@@ -152,6 +153,12 @@
 		font-weight: 600;
 		color: var(--text-medium);
 		white-space: nowrap;
+	}
+
+	/* Condensed numerals run small, so a step up from the reason text */
+	.impact {
+		font-family: var(--font-numeric);
+		font-size: var(--font-size-xs);
 	}
 
 	.impact.gain { color: var(--score-positive); }

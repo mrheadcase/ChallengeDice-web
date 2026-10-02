@@ -10,6 +10,7 @@
 	import PlayerTabs from '$lib/components/PlayerTabs.svelte';
 	import SettingsDialog from '$lib/components/SettingsDialog.svelte';
 	import type { DiceCombination } from '$lib/game/models';
+	import { applySelection, calculateScore } from '$lib/game/logic';
 	import * as FM from '$lib/firebase/gameManager';
 	import { preferences } from '$lib/stores/preferences.svelte';
 	import { playRollingSound, playShakingSound, tryVibrate } from '$lib/utils/sounds';
@@ -27,6 +28,14 @@
 	let gameId = $derived(page.params.gameId as string);
 	let localIdx = $derived(onlineGame.localPlayerIndex);
 	let viewingPlayer = $derived(gameState.players[viewingPlayerIndex]);
+
+	// How much the selected combination changes the local player's total, signed for the button
+	let movePoints = $derived.by(() => {
+		const sc = gameState.players[localIdx]?.scorecard;
+		if (!selectedCombo || !sc) return '';
+		const d = calculateScore(applySelection(sc, selectedCombo)).totalScore - calculateScore(sc).totalScore;
+		return d > 0 ? `+${d}` : d < 0 ? `−${Math.abs(d)}` : '0';
+	});
 
 	// Start observing if not already
 	$effect(() => {
@@ -154,7 +163,7 @@
 						onselect={handleSelectCombo}
 					/>
 					{#if selectedCombo}
-						<button class="btn btn-success btn-block confirm-btn" onclick={handleConfirmSelection}>Confirm</button>
+						<button class="btn btn-success btn-block confirm-btn" onclick={handleConfirmSelection}>Confirm <span class="move-points">{movePoints}</span></button>
 					{/if}
 				</div>
 			{:else if onlineGame.localPlayerFinished}
@@ -202,6 +211,14 @@
 		color: var(--text-medium);
 		font-size: var(--font-size-sm);
 		line-height: var(--line-height-sm);
+	}
+
+	/* Points the move is worth, on the action button */
+	.move-points {
+		font-family: var(--font-numeric);
+		padding: 1px var(--space-sm);
+		border-radius: var(--radius-md);
+		background: rgba(0, 0, 0, 0.18);
 	}
 
 	.finished-count {
