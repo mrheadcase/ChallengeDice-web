@@ -533,8 +533,11 @@
 		background: var(--sc-well);
 	}
 
-	/* One more mark fills it */
-	.meter.almost-full { box-shadow: inset 0 0 0 1.5px var(--warning); }
+	/* One more mark fills it — red, so it reads differently from the orange combo preview below */
+	.meter.almost-full {
+		box-shadow: inset 0 0 0 1.5px var(--score-negative);
+		background: color-mix(in srgb, var(--score-negative) 8%, var(--sc-well));
+	}
 	.meter.previewing { box-shadow: inset 0 0 0 1.5px var(--combo-fifth); }
 	.meter.full { opacity: 0.5; }
 
