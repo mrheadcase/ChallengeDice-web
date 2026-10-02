@@ -210,9 +210,9 @@
 		font-variant-numeric: tabular-nums;
 	}
 
-	/* Portrait phones: the combination grid shrinks (and scrolls) to fit the turn panel */
-	@media (max-width: 767px) and (orientation: portrait) {
-		.selecting-info { flex: 0 1 auto; min-height: 0; gap: var(--space-sm); }
+	/* Stacked layouts: the combination grid shrinks (and scrolls) to fit the fixed-height turn panel */
+	@media (max-width: 1023px) and (min-height: 501px) {
+		.selecting-info { flex: 1 1 0; min-height: 0; gap: var(--space-sm); }
 	}
 
 	/* Landscape phones: compact controls for the short height */

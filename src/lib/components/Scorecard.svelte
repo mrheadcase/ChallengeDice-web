@@ -224,8 +224,8 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-sm);
-		height: 100%;
-		min-height: 0;
+		/* Fills the space its parent gives it; the lanes take whatever is left inside */
+		min-height: 100%;
 		padding: 10px 12px;
 		background: var(--card-bg);
 		border-radius: var(--radius-lg);
@@ -562,6 +562,31 @@
 			gap: 6px;
 			padding: var(--space-sm) 10px;
 		}
+	}
+
+	/*
+	 * Landscape phones: too short for a 5th-die row under the lanes, so the meters become
+	 * a column on the right and the lanes get the full height
+	 */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.scorecard:not(.compact) {
+			--row-min: 18px;
+			--row-gap: 2px;
+			--pip: 10px;
+			--label-w: 20px;
+			--pts-w: 36px;
+			--col-gap: 6px;
+			--value-font: calc(18px * var(--sc-k));
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) 124px;
+			grid-template-rows: auto minmax(0, 1fr);
+			gap: 6px 12px;
+			height: 100%;
+			padding: var(--space-sm) 10px;
+		}
+		.scorecard:not(.compact) .fifth { grid-column: 2; grid-row: 1 / 3; }
+		.scorecard:not(.compact) .fifth-meters { grid-template-columns: 1fr; gap: var(--space-xs); }
+		.scorecard:not(.compact) .meter { flex-direction: row; gap: var(--space-sm); padding: var(--space-xs) 6px; }
 	}
 
 	/* Tablets and up: bigger targets and type */

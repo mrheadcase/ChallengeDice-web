@@ -3,9 +3,14 @@
 	 * Game screen shell shared by local and online play: the always-dark top bar, the
 	 * player tabs, and the board — a turn panel (dice, combinations, actions) beside or
 	 * above the scorecard depending on the screen.
+	 *
+	 * Layout rule: the turn panel has a fixed size per breakpoint and the scorecard takes
+	 * everything else, so the sheet's rows grow into spare space instead of leaving empty
+	 * bands, and the sheet stays put from turn to turn however many combinations a roll has.
 	 */
 	import type { Snippet } from 'svelte';
 	import { base } from '$app/paths';
+	import { preferences } from '$lib/stores/preferences.svelte';
 
 	interface Props {
 		round: number;
@@ -22,7 +27,8 @@
 	let { round, leading, notice, onsettings, tabs, turn, scorecard }: Props = $props();
 </script>
 
-<div class="game-page">
+<!-- The combination size preference sets the card row height the turn panel is sized from -->
+<div class="game-page combo-{preferences.current.comboSize}">
 	<div class="top-bar">
 		{#if leading.href}
 			<a href={leading.href} class="top-bar-btn">{leading.label}</a>
@@ -56,11 +62,25 @@
 
 <style>
 	.game-page {
+		/*
+		 * Combination card row height per size preference (CombinationGrid pins its rows
+		 * to it), and the pieces the stacked turn panel's height is built from
+		 */
+		--combo-row: 58px;
+		--combo-rows: 2;
+		--dice-block: 72px; /* 56px dice + DiceDisplay's caption line */
+		--score-bar: 44px;
+		--turn-gap: var(--space-sm);
+
 		display: flex;
 		flex-direction: column;
 		height: 100%;
 		overflow: hidden;
 	}
+
+	.combo-small { --combo-row: 48px; }
+	.combo-medium { --combo-row: 53px; }
+	.combo-extra_large { --combo-row: 66px; }
 
 	.top-bar {
 		display: flex;
@@ -101,60 +121,104 @@
 		color: var(--warning);
 	}
 
-	/* Outer margin + gap between the turn panel and the scorecard */
+	/* Stacked by default: turn panel above, scorecard filling the rest */
 	.board {
 		flex: 1;
+		min-height: 0;
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-md);
 		padding: var(--space-md);
-		overflow: hidden;
 	}
 
-	/* Larger gaps between the turn steps: status → dice → combinations → action */
 	.turn-panel {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-lg);
-		flex-shrink: 0;
+		gap: var(--turn-gap);
+		min-height: 0;
+		min-width: 0;
 	}
 
-	/* Size container so the scorecard's cells can scale to the space it gets */
+	/* Scrolls only if the sheet can't fit at its minimum row height */
 	.scorecard-section {
 		flex: 1;
-		overflow: auto;
 		min-height: 0;
-		container-type: inline-size;
+		min-width: 0;
+		overflow-y: auto;
 	}
 
 	/*
-	 * Desktop: a centred board with the turn panel on the left and the scorecard,
-	 * sized to its grid, on the right. The tabs share the same max width so they
-	 * line up with the board edge.
+	 * Stacked (phones and tablets in portrait): the turn panel is exactly dice + N rows of
+	 * combinations + the score bar. Anything that doesn't fit scrolls inside the panel.
+	 */
+	@media (max-width: 1023px) and (min-height: 501px) {
+		.turn-panel {
+			flex: 0 0 calc(
+				var(--dice-block) + var(--turn-gap) +
+				var(--combo-rows) * var(--combo-row) + (var(--combo-rows) - 1) * var(--space-sm) + 2 * var(--space-xs) +
+				var(--turn-gap) + var(--score-bar)
+			);
+			overflow: hidden;
+		}
+	}
+
+	/* Portrait phones: tighter page margins */
+	@media (max-width: 767px) and (orientation: portrait) {
+		.top-bar { padding: var(--space-xs) var(--space-sm); }
+		.board {
+			gap: var(--space-sm);
+			padding: var(--space-sm) var(--space-md) max(var(--space-sm), env(safe-area-inset-bottom));
+		}
+	}
+
+	/* Short portrait phones: smaller dice and one visible row of combinations (the rest scroll) */
+	@media (max-width: 767px) and (orientation: portrait) and (max-height: 740px) {
+		.game-page {
+			--dice-block: 64px;
+			--combo-rows: 1;
+			--score-bar: 40px;
+		}
+	}
+
+	/*
+	 * Shortest portrait phones (e.g. Chrome on iOS, whose top and bottom bars stay
+	 * visible): slimmer top bar
+	 */
+	@media (max-width: 767px) and (orientation: portrait) and (max-height: 680px) {
+		.top-bar { padding: var(--space-2xs) var(--space-sm); }
+		.top-bar-btn { padding: var(--space-xs) 10px; }
+		.round-label { font-size: var(--font-size-sm); line-height: var(--line-height-sm); }
+	}
+
+	/* Tablets: the extra width fits more cards per row, so roomier spacing */
+	@media (min-width: 768px) and (max-width: 1023px) and (min-height: 501px) {
+		.game-page { --turn-gap: 12px; }
+		.board { gap: var(--space-md); padding: var(--space-md) var(--space-lg) var(--space-lg); }
+	}
+
+	/*
+	 * Desktop: a fixed-width turn rail on the left and the scorecard filling the rest of
+	 * the width and the full height. The tabs share the board's max width so they line up.
 	 */
 	@media (min-width: 1024px) and (min-height: 501px) {
 		.tabs-row,
 		.board {
 			width: 100%;
-			max-width: 1120px;
+			max-width: 1440px;
 			margin-inline: auto;
 		}
-		/*
-		 * One grid row sized by the scorecard (capped at the available height), so the
-		 * turn panel and the scorecard always render as equal-height cards.
-		 */
 		.board {
 			display: grid;
-			grid-template-columns: minmax(0, 1fr) auto;
-			grid-template-rows: fit-content(100%);
-			align-content: start;
-			gap: var(--space-xl);
-			padding: var(--space-lg);
+			/* 460px fits the grouped 68px dice (5 × 68 + 56) inside the panel padding */
+			grid-template-columns: 460px minmax(0, 1fr);
+			grid-template-rows: minmax(0, 1fr);
+			gap: var(--space-lg);
+			padding: var(--space-lg) var(--space-xl);
 		}
 		.turn-panel {
-			min-height: 0;
-			overflow-y: auto;
+			overflow: hidden auto;
 			justify-content: center;
+			gap: var(--space-lg);
 			padding: var(--space-lg);
 			background: var(--card-bg);
 			border-radius: var(--radius-lg);
@@ -164,58 +228,12 @@
 		.turn-panel :global(.combo-card:not(.selected):not(.invalid)) {
 			background: var(--cream);
 		}
-		/* Cells are already at full size here, so size to content instead */
-		.scorecard-section {
-			container-type: normal;
-		}
 	}
 
 	/*
-	 * Portrait phones: the turn panel always fills exactly the space above the scorecard,
-	 * so the scorecard stays put from turn to turn however many combinations there are.
-	 * Content stacks from the top — dice, then the combinations right under them, then the
-	 * action bar — with any spare space left at the bottom of the panel; the grid scrolls
-	 * when they don't fit. The scorecard is capped so the panel keeps ~200px; on very
-	 * short screens it scrolls.
+	 * Landscape phones: side by side — a fixed-width turn column and the scorecard, which
+	 * moves its 5th-die meters into a column of their own (Scorecard.svelte)
 	 */
-	@media (max-width: 767px) and (orientation: portrait) {
-		.top-bar { padding: var(--space-xs) var(--space-sm); }
-		.board {
-			gap: var(--space-sm);
-			padding: var(--space-sm) var(--space-md) max(var(--space-sm), env(safe-area-inset-bottom));
-		}
-		.turn-panel {
-			flex: 1 1 0;
-			min-height: 0;
-			gap: var(--space-sm);
-		}
-		.scorecard-section {
-			flex: 0 0 auto;
-			max-height: calc(100% - 200px - var(--space-sm));
-		}
-	}
-
-	/* Short portrait phones: the turn panel can give up a little more for a full scorecard */
-	@media (max-width: 767px) and (orientation: portrait) and (max-height: 740px) {
-		.scorecard-section {
-			max-height: calc(100% - 172px - var(--space-sm));
-		}
-	}
-
-	/*
-	 * Shortest portrait phones (e.g. Chrome on iOS, whose top and bottom bars stay
-	 * visible): slimmer top bar, and a little less held back for the turn panel.
-	 */
-	@media (max-width: 767px) and (orientation: portrait) and (max-height: 680px) {
-		.top-bar { padding: var(--space-2xs) var(--space-sm); }
-		.top-bar-btn { padding: var(--space-xs) 10px; }
-		.round-label { font-size: var(--font-size-sm); line-height: var(--line-height-sm); }
-		.scorecard-section {
-			max-height: calc(100% - 160px - var(--space-sm));
-		}
-	}
-
-	/* Landscape on phones — switch to side-by-side to fit the short viewport height */
 	@media (orientation: landscape) and (max-height: 500px) {
 		.top-bar { padding: var(--space-xs) var(--space-md); flex-wrap: nowrap; }
 		.round-label { font-size: var(--font-size-sm); }
@@ -224,16 +242,11 @@
 		.board {
 			flex-direction: row;
 			gap: var(--space-sm);
-			padding: var(--space-sm);
+			padding: var(--space-sm) max(var(--space-sm), env(safe-area-inset-right)) var(--space-sm) max(var(--space-sm), env(safe-area-inset-left));
 		}
 		.turn-panel {
-			flex: 1 1 50%;
-			gap: var(--space-sm);
-			overflow-y: auto;
-			min-height: 0;
-		}
-		.scorecard-section {
-			flex: 1 1 50%;
+			flex: 0 0 300px;
+			overflow: hidden auto;
 		}
 	}
 </style>

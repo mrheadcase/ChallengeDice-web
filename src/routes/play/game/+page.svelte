@@ -220,10 +220,10 @@
 		margin-bottom: var(--space-sm);
 	}
 
-	/* Fixed height so swapping the hint for the button doesn't shift the layout */
+	/* Fixed height (GameLayout's --score-bar) so swapping the hint for the button doesn't shift the layout */
 	.score-bar {
 		flex-shrink: 0;
-		min-height: 44px;
+		min-height: var(--score-bar, 44px);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -241,12 +241,8 @@
 		border-radius: var(--radius-md);
 	}
 
-	/*
-	 * Portrait phones: the scorecard's position doesn't depend on this bar here (only the
-	 * combo grid resizes), so drop the reserved button height and shrink the hint.
-	 */
+	/* Portrait phones: smaller hint text */
 	@media (max-width: 767px) and (orientation: portrait) {
-		.score-bar { min-height: 0; }
 		.score-hint {
 			font-size: var(--font-size-xs);
 			line-height: var(--line-height-xs);

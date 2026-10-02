@@ -9,7 +9,6 @@
 	import type { Player } from '$lib/game/models';
 	import { calculateScore } from '$lib/game/logic';
 	import Scorecard from './Scorecard.svelte';
-	import PinchZoomContainer from './PinchZoomContainer.svelte';
 	import ConfettiOverlay from './ConfettiOverlay.svelte';
 
 	interface Props {
@@ -75,9 +74,7 @@
 
 	{#if viewingPlayer}
 		<div class="scorecard-viewer">
-			<PinchZoomContainer>
-				<Scorecard scorecard={viewingPlayer.scorecard} compact />
-			</PinchZoomContainer>
+			<Scorecard scorecard={viewingPlayer.scorecard} compact />
 		</div>
 	{/if}
 

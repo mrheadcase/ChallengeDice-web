@@ -153,7 +153,8 @@
 	.combo-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(var(--combo-col), 1fr));
-		grid-auto-rows: max-content;
+		/* Fixed row height from GameLayout (per card size), so the turn panel can be sized in rows */
+		grid-auto-rows: var(--combo-row, max-content);
 		gap: var(--space-sm);
 		/* Room for the selected card's shadow inside the scroll area, pulled back out so card edges align with the scorecard */
 		padding: var(--space-xs);
@@ -206,13 +207,13 @@
 	}
 
 	/*
-	 * Portrait phones: the grid is its natural height, shrinking (and scrolling) only when
-	 * the turn panel runs out of room above the scorecard. It never grows, so a single row
-	 * of cards sits right above the action bar with no empty band between them.
+	 * Stacked layouts (phones and tablets in portrait): the turn panel has a fixed height.
+	 * The wrapper takes the room between the dice and the action bar, so the action bar
+	 * stays in the same place every turn; the grid shrinks to that room and scrolls.
 	 */
-	@media (max-width: 767px) and (orientation: portrait) {
+	@media (max-width: 1023px) and (min-height: 501px) {
 		.combo-wrapper {
-			flex: 0 1 auto;
+			flex: 1 1 auto;
 			min-height: 0;
 			display: flex;
 			flex-direction: column;
