@@ -1,19 +1,18 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
-	import { MediaQuery } from 'svelte/reactivity';
 	import { localGame } from '$lib/stores/localGame.svelte';
+	import GameLayout from '$lib/components/GameLayout.svelte';
 	import DiceDisplay from '$lib/components/DiceDisplay.svelte';
 	import CombinationGrid from '$lib/components/CombinationGrid.svelte';
 	import Scorecard from '$lib/components/Scorecard.svelte';
 	import PlayerTabs from '$lib/components/PlayerTabs.svelte';
 	import EliminationDialog from '$lib/components/EliminationDialog.svelte';
 	import SettingsDialog from '$lib/components/SettingsDialog.svelte';
-	import PinchZoomContainer from '$lib/components/PinchZoomContainer.svelte';
 	import type { DiceCombination } from '$lib/game/models';
 	import { preferences } from '$lib/stores/preferences.svelte';
 	import { playRollingSound, playShakingSound, tryVibrate } from '$lib/utils/sounds';
+	import { boardDiceSize } from '$lib/utils/boardLayout';
 
 	let rolling = $state(false);
 	let selectedCombo = $state<DiceCombination | null>(null);
@@ -23,9 +22,7 @@
 	let autoRolledRound = $state(-1);
 	let showSettings = $state(false);
 
-	// Desktop two-column layout has room for larger dice (excludes short landscape phones)
-	const wideLayout = new MediaQuery('(min-width: 1024px) and (min-height: 501px)');
-	let diceSize = $derived(wideLayout.current ? 68 : 56);
+	let diceSize = $derived(boardDiceSize());
 
 	let gameState = $derived(localGame.gameState);
 	let currentPlayer = $derived(gameState.players[gameState.currentPlayerIndex]);
@@ -137,146 +134,79 @@
 	}
 </script>
 
-<div class="game-page">
-	<div class="top-bar">
-		<a href={`${base}/`} class="icon-btn">Menu</a>
-		<span class="round-label">Round {gameState.currentRound}</span>
-		<div class="top-bar-right">
-			<button class="icon-btn" onclick={() => { showSettings = true; }}>Settings</button>
-			<a href={`${base}/rules`} class="icon-btn">Rules</a>
-		</div>
-	</div>
-
-	<div class="tabs-row">
+<GameLayout
+	round={gameState.currentRound}
+	leading={{ label: 'Menu', href: `${base}/` }}
+	onsettings={() => { showSettings = true; }}
+>
+	{#snippet tabs()}
 		<PlayerTabs
 			players={gameState.players}
 			activeIndex={viewingPlayerIndex}
 			onselect={(i) => { viewingPlayerIndex = i; }}
 		/>
-	</div>
+	{/snippet}
 
-	<div class="game-content">
-		<div class="dice-section">
-			{#if gameState.phase === 'ROLLING'}
-				<div class="center-block">
-					{#if preferences.current.autoRollEnabled}
-						<p class="status-text">{currentPlayer?.name} — rolling...</p>
+	{#snippet turn()}
+		{#if gameState.phase === 'ROLLING'}
+			<div class="center-block">
+				{#if preferences.current.autoRollEnabled}
+					<p class="status-text">{currentPlayer?.name} — rolling...</p>
+				{:else}
+					<p class="status-text">{currentPlayer?.name}'s turn to roll</p>
+					<button class="btn btn-primary btn-lg roll-btn" onclick={doRoll} disabled={rolling}>
+						{rolling ? 'Rolling...' : 'Roll Dice'}
+					</button>
+				{/if}
+			</div>
+		{/if}
+
+		{#if gameState.diceValues.length > 0}
+			<div class="center-block">
+				<DiceDisplay diceValues={gameState.diceValues} {rolling} {diceSize} selectedCombination={selectedCombo} />
+			</div>
+		{/if}
+
+		{#if gameState.phase === 'SELECTING'}
+			<CombinationGrid
+				combinations={gameState.combinations}
+				validCombinations={gameState.validCombinations}
+				scorecard={currentPlayer?.scorecard ?? { leftMarks: {}, rightMarks: {} }}
+				selectedCombination={selectedCombo}
+				onselect={localGame.isCurrentPlayerAI() ? undefined : selectCombo}
+			/>
+			{#if !localGame.isCurrentPlayerAI()}
+				<div class="score-bar">
+					{#if selectedCombo}
+						<button class="btn btn-primary btn-block score-btn" onclick={scoreIt}>Score It</button>
 					{:else}
-						<p class="status-text">{currentPlayer?.name}'s turn to roll</p>
-						<button class="roll-btn" onclick={doRoll} disabled={rolling}>
-							{rolling ? 'Rolling...' : 'Roll Dice'}
-						</button>
+						<p class="score-hint">Tap a combination to preview it on your scorecard</p>
 					{/if}
 				</div>
 			{/if}
+		{/if}
+	{/snippet}
 
-			{#if gameState.diceValues.length > 0}
-				<div class="center-block">
-					<DiceDisplay diceValues={gameState.diceValues} {rolling} {diceSize} selectedCombination={selectedCombo} />
-				</div>
-			{/if}
+	{#snippet scorecard()}
+		{#if viewingPlayer}
+			<Scorecard
+				scorecard={viewingPlayer.scorecard}
+				previewCombination={viewingPlayerIndex === gameState.currentPlayerIndex ? selectedCombo : null}
+			/>
+		{/if}
+	{/snippet}
+</GameLayout>
 
-			{#if gameState.phase === 'SELECTING'}
-				<CombinationGrid
-					combinations={gameState.combinations}
-					validCombinations={gameState.validCombinations}
-					scorecard={currentPlayer?.scorecard ?? { leftMarks: {}, rightMarks: {} }}
-					selectedCombination={selectedCombo}
-					onselect={localGame.isCurrentPlayerAI() ? undefined : selectCombo}
-				/>
-				{#if !localGame.isCurrentPlayerAI()}
-					<div class="score-bar">
-						{#if selectedCombo}
-							<button class="score-btn" onclick={scoreIt}>Score It</button>
-						{:else}
-							<p class="score-hint">Tap a combination to preview it on your scorecard</p>
-						{/if}
-					</div>
-				{/if}
-			{/if}
-		</div>
+<EliminationDialog
+	playerNames={eliminatedNames}
+	visible={eliminatedNames.length > 0}
+	ondismiss={dismissElimination}
+/>
 
-		<div class="scorecard-section">
-			<PinchZoomContainer>
-				{#if viewingPlayer}
-					<Scorecard
-						scorecard={viewingPlayer.scorecard}
-						playerColor={viewingPlayer.color}
-						previewCombination={viewingPlayerIndex === gameState.currentPlayerIndex ? selectedCombo : null}
-					/>
-				{/if}
-			</PinchZoomContainer>
-		</div>
-	</div>
+<SettingsDialog visible={showSettings} onclose={() => { showSettings = false; }} />
 
-	<EliminationDialog
-		playerNames={eliminatedNames}
-		visible={eliminatedNames.length > 0}
-		ondismiss={dismissElimination}
-	/>
-
-	<SettingsDialog visible={showSettings} onclose={() => { showSettings = false; }} />
-</div>
-
+<!-- Board layout lives in GameLayout; these style only this page's turn panel content -->
 <style>
-	.game-page {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		overflow: hidden;
-	}
-
-	.top-bar {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: var(--space-sm) var(--space-md);
-		background: #1A0D04;
-		color: #F0E8D8;
-	}
-
-	.top-bar-right {
-		display: flex;
-		gap: 4px;
-		align-items: center;
-	}
-
-	.icon-btn {
-		color: var(--light-gold);
-		font-weight: 600;
-		font-size: var(--font-size-sm);
-		padding: 6px 12px;
-		border-radius: var(--radius-md);
-		text-decoration: none;
-		min-height: auto;
-	}
-	.icon-btn:hover { background: rgba(255,255,255,0.1); }
-
-	.round-label {
-		font-weight: 700;
-		font-size: var(--font-size-base);
-		line-height: var(--line-height-base);
-		color: inherit;
-	}
-
-	/* Outer margin + gap between the turn panel and the scorecard */
-	.game-content {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-md);
-		padding: var(--space-md);
-		overflow: hidden;
-	}
-
-	/* Larger gaps between the turn steps: status → dice → combinations → Score It */
-	.dice-section {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-lg);
-		flex-shrink: 0;
-	}
-
 	.center-block {
 		text-align: center;
 		align-self: center;
@@ -289,18 +219,6 @@
 		line-height: var(--line-height-sm);
 		margin-bottom: var(--space-sm);
 	}
-
-	.roll-btn {
-		background: var(--gold-amber);
-		color: white;
-		padding: 14px 40px;
-		border-radius: var(--radius-lg);
-		font-weight: 700;
-		font-size: var(--font-size-lg);
-		box-shadow: 0 4px 12px rgba(196, 122, 16, 0.3);
-	}
-	.roll-btn:hover:not(:disabled) { background: var(--mid-brown); }
-	.roll-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 	/* Fixed height so swapping the hint for the button doesn't shift the layout */
 	.score-bar {
@@ -315,132 +233,30 @@
 		color: var(--text-medium);
 		font-size: var(--font-size-sm);
 		line-height: var(--line-height-sm);
-		font-weight: 400;
 		text-align: center;
 	}
 
 	.score-btn {
-		background: var(--btn-primary-bg);
-		color: var(--btn-primary-text);
-		padding: 10px 24px;
+		padding: 10px var(--space-lg);
 		border-radius: var(--radius-md);
-		font-weight: 700;
-		font-size: var(--font-size-base);
-		box-shadow: 0 2px 8px rgba(196, 122, 16, 0.3);
-		width: 100%;
-		max-width: 320px;
-	}
-	.score-btn:hover { background: var(--mid-brown); }
-
-	/* Size container so the scorecard's cells can scale to the space it gets */
-	.scorecard-section {
-		flex: 1;
-		overflow: auto;
-		min-height: 0;
-		container-type: inline-size;
 	}
 
 	/*
-	 * Desktop: a centred board with the turn panel on the left and the scorecard,
-	 * sized to its grid, on the right. The tabs share the same max width so they
-	 * line up with the board edge.
-	 */
-	@media (min-width: 1024px) and (min-height: 501px) {
-		.tabs-row,
-		.game-content {
-			width: 100%;
-			max-width: 1120px;
-			margin-inline: auto;
-		}
-		/*
-		 * One grid row sized by the scorecard (capped at the available height), so the
-		 * turn panel and the scorecard always render as equal-height cards.
-		 */
-		.game-content {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr) auto;
-			grid-template-rows: fit-content(100%);
-			align-content: start;
-			gap: var(--space-xl);
-			padding: var(--space-lg);
-		}
-		.dice-section {
-			min-height: 0;
-			overflow-y: auto;
-			justify-content: center;
-			padding: var(--space-lg);
-			background: var(--card-bg);
-			border-radius: var(--radius-lg);
-			box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-		}
-		/* Combo cards sit on the page colour so they stay distinct inside the panel card */
-		.dice-section :global(.combo-card:not(.selected):not(.invalid)) {
-			background: var(--cream);
-		}
-		.scorecard-section {
-			/* Cells are already at full size here, so size to content instead */
-			container-type: normal;
-		}
-	}
-
-	/*
-	 * Portrait phones: the turn panel always fills exactly the space above the scorecard,
-	 * so the scorecard stays put from turn to turn however many combinations there are.
-	 * Content stacks from the top — dice, then the combinations right under them, then the
-	 * action bar — with any spare space left at the bottom of the panel; the grid scrolls
-	 * when they don't fit. The scorecard is capped so the panel keeps ~200px; on very
-	 * short screens it scrolls.
+	 * Portrait phones: the scorecard's position doesn't depend on this bar here (only the
+	 * combo grid resizes), so drop the reserved button height and shrink the hint.
 	 */
 	@media (max-width: 767px) and (orientation: portrait) {
-		.game-content {
-			gap: var(--space-sm);
-			padding: var(--space-sm) var(--space-md) var(--space-md);
-		}
-		.dice-section {
-			flex: 1 1 0;
-			min-height: 0;
-			gap: var(--space-sm);
-		}
-		.scorecard-section {
-			flex: 0 0 auto;
-			max-height: calc(100% - 200px - var(--space-sm));
-		}
-		/*
-		 * The scorecard's position no longer depends on this bar here (only the combo
-		 * grid resizes), so drop the reserved button height and shrink the hint.
-		 */
-		.score-bar {
-			min-height: 0;
-		}
+		.score-bar { min-height: 0; }
 		.score-hint {
 			font-size: var(--font-size-xs);
 			line-height: var(--line-height-xs);
 		}
 	}
 
-	/* Landscape on phones — switch to side-by-side to fit the short viewport height */
+	/* Landscape phones: compact controls for the short height */
 	@media (orientation: landscape) and (max-height: 500px) {
-		.top-bar { padding: var(--space-xs) var(--space-md); }
-		.round-label { font-size: var(--font-size-sm); }
-		.icon-btn { padding: 4px 8px; }
-
-		.game-content {
-			flex-direction: row;
-			gap: var(--space-sm);
-			padding: var(--space-sm);
-		}
-		.dice-section {
-			flex: 1 1 50%;
-			gap: var(--space-sm);
-			overflow-y: auto;
-			min-height: 0;
-		}
-		.scorecard-section {
-			flex: 1 1 50%;
-		}
-
 		.status-text { margin-bottom: var(--space-xs); }
-		.roll-btn { padding: 8px 24px; font-size: var(--font-size-base); }
-		.score-btn { padding: 8px 16px; }
+		.roll-btn { padding: var(--space-sm) var(--space-lg); font-size: var(--font-size-base); }
+		.score-btn { padding: var(--space-sm) var(--space-md); }
 	}
 </style>

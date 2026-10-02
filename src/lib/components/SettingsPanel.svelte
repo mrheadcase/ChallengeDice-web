@@ -151,7 +151,7 @@
 		width: 100%;
 	}
 
-	section { margin-bottom: 24px; }
+	section { margin-bottom: var(--space-lg); }
 
 	h3 {
 		color: var(--gold-amber);
@@ -165,13 +165,13 @@
 		justify-content: space-between;
 		padding: 12px 0;
 		border-bottom: 1px solid var(--warm-tan);
-		gap: 16px;
+		gap: var(--space-md);
 	}
 
 	.toggle-info {
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
+		gap: var(--space-2xs);
 	}
 
 	.toggle-label {
@@ -209,10 +209,10 @@
 		left: 2px;
 		width: 20px;
 		height: 20px;
-		border-radius: 50%;
+		border-radius: var(--radius-full);
 		background: var(--card-bg);
 		transition: transform var(--transition-fast);
-		box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+		box-shadow: var(--shadow-card);
 	}
 
 	.toggle-switch.active .toggle-thumb {
@@ -228,7 +228,7 @@
 		display: block;
 		font-weight: 600;
 		color: var(--text-dark);
-		margin-bottom: 2px;
+		margin-bottom: var(--space-2xs);
 	}
 
 	.group-desc {
@@ -247,7 +247,7 @@
 
 	.segment-btn {
 		flex: 1;
-		padding: 8px 4px;
+		padding: var(--space-sm) var(--space-xs);
 		background: var(--card-bg);
 		color: var(--text-medium);
 		font-weight: 500;
@@ -265,7 +265,7 @@
 
 	.segment-btn.selected {
 		background: var(--gold-amber);
-		color: white;
+		color: var(--text-on-color);
 		font-weight: 700;
 	}
 

@@ -1,54 +1,32 @@
 <script lang="ts">
 	// Scorecard component — ported from ScorecardView.kt
-	import type { Scorecard as ScorecardType, DiceCombination, PlayerColor } from '$lib/game/models';
+	import type { Scorecard as ScorecardType, DiceCombination } from '$lib/game/models';
 	import { calculateRowScore, calculateScore } from '$lib/game/logic';
 	import {
 		LEFT_SCORECARD_CONFIG,
 		SCORING_MULTIPLIERS,
 		RIGHT_SCORECARD_ROWS,
 		RIGHT_SCORECARD_BOXES_PER_ROW,
-		PLAYER_COLORS,
 	} from '$lib/game/constants';
-	import { preferences, type ScorecardTextSize } from '$lib/stores/preferences.svelte';
+	import { preferences } from '$lib/stores/preferences.svelte';
 	import DiceView from './DiceView.svelte';
 
 	interface Props {
 		scorecard: ScorecardType;
-		playerColor?: PlayerColor;
 		previewCombination?: DiceCombination | null;
 		compact?: boolean;
 	}
 
 	let {
 		scorecard,
-		playerColor = 'BLUE',
 		previewCombination = null,
 		compact = false,
 	}: Props = $props();
 
+	// Columns in the penalty zone (the widest row's count); --penalty-cols in the styles matches it
 	const MAX_PENALTY_DISPLAY = 5;
-	const MARKED_COLOR = 'var(--sc-mark-scored)';
-	const PENALTY_MARK_COLOR = 'var(--sc-mark-penalty)';
-	const PREVIEW_PAIR1 = 'var(--combo-pair1)';
-	const PREVIEW_PAIR2 = 'var(--combo-pair2)';
-	const PREVIEW_FIFTH = 'var(--combo-fifth)';
-
-	function previewTint(color: string): string {
-		return `color-mix(in srgb, ${color} 15%, transparent)`;
-	}
-
-	// One multiplier per text-size preference, applied to every scorecard text role
-	const TEXT_SCALE: Record<ScorecardTextSize, number> = {
-		small: 0.85,
-		medium: 0.92,
-		large: 1,
-		extra_large: 1.15,
-	};
-
-	let textScale = $derived(TEXT_SCALE[preferences.current.scorecardTextSize]);
 
 	let scoreResult = $derived(calculateScore(scorecard));
-	let colorScheme = $derived(PLAYER_COLORS[playerColor]);
 
 	function getPreviewLeftAdded(rowNumber: number): number {
 		if (!previewCombination) return 0;
@@ -58,10 +36,11 @@
 		return added;
 	}
 
-	function getPreviewColor(rowNumber: number): string | null {
+	// Which pair's colour a previewed mark in this row takes (the .preview-pair1/2 classes)
+	function getPreviewPair(rowNumber: number): 'pair1' | 'pair2' | null {
 		if (!previewCombination) return null;
-		if (previewCombination.pair1Sum === rowNumber) return PREVIEW_PAIR1;
-		if (previewCombination.pair2Sum === rowNumber) return PREVIEW_PAIR2;
+		if (previewCombination.pair1Sum === rowNumber) return 'pair1';
+		if (previewCombination.pair2Sum === rowNumber) return 'pair2';
 		return null;
 	}
 
@@ -111,13 +90,13 @@
 	}
 </script>
 
-<div class="scorecard" class:compact style:--sc-scale={textScale}>
+<div class="scorecard text-{preferences.current.scorecardTextSize}" class:compact>
 	<!-- LEFT SCORECARD -->
 	<div class="scorecard-section">
 		<!-- Header row — quiet zone labels, centred over their columns -->
 		<div class="scorecard-row header-row">
 			<span class="row-label"></span>
-			<span class="header-penalty" style:width="calc(var(--cell) * {MAX_PENALTY_DISPLAY})">Penalty −10</span>
+			<span class="header-penalty">Penalty −10</span>
 			<span class="zone-gap"></span>
 			{#each SCORING_MULTIPLIERS as mult}
 				<span class="header-mult">{mult}×</span>
@@ -131,7 +110,7 @@
 			{@const score = calculateRowScore(config.rowNumber, marks)}
 			{@const nearScoring = rowIsNearScoring(config.rowNumber)}
 			{@const emptySlots = MAX_PENALTY_DISPLAY - config.penaltyBoxCount}
-			{@const previewColor = getPreviewColor(config.rowNumber)}
+			{@const previewPair = getPreviewPair(config.rowNumber)}
 			<!-- Latest mark in the scoring zone — the multiplier this row is currently scoring at -->
 			{@const currentIdx = marks > config.penaltyBoxCount ? marks - 1 : -1}
 			<div class="scorecard-row" class:near-scoring={nearScoring}>
@@ -150,13 +129,13 @@
 						class:zone-end={boxIdx === config.penaltyBoxCount - 1}
 						class:filled
 						class:preview
-						style:background-color={preview && previewColor ? previewTint(previewColor) : undefined}
-						style:border-color={preview && previewColor ? previewColor : undefined}
+						class:preview-pair1={preview && previewPair === 'pair1'}
+						class:preview-pair2={preview && previewPair === 'pair2'}
 					>
 						{#if filled}
-							<span class="mark" style:color={PENALTY_MARK_COLOR}>X</span>
+							<span class="mark penalty-mark">X</span>
 						{:else if preview}
-							<span class="mark preview-mark" style:color={previewColor}>X</span>
+							<span class="mark preview-mark">X</span>
 						{/if}
 					</span>
 				{/each}
@@ -173,17 +152,17 @@
 						class:current={boxIdx === currentIdx}
 						class:filled
 						class:preview
-						style:background-color={preview && previewColor ? previewTint(previewColor) : undefined}
-						style:border-color={preview && previewColor ? previewColor : undefined}
+						class:preview-pair1={preview && previewPair === 'pair1'}
+						class:preview-pair2={preview && previewPair === 'pair2'}
 						title="{config.baseValue} × {mult} = {config.baseValue * mult}"
 					>
 						{#if filled && boxIdx === currentIdx}
 							<!-- The latest mark shows the value the row is scoring, rather than an X -->
 							<span class="current-value">{config.baseValue * mult}</span>
 						{:else if filled}
-							<span class="mark" style:color={MARKED_COLOR}>X</span>
+							<span class="mark scored-mark">X</span>
 						{:else if preview}
-							<span class="mark preview-mark" style:color={previewColor}>X</span>
+							<span class="mark preview-mark">X</span>
 						{:else}
 							<span class="multiplier-hint">{config.baseValue * mult}</span>
 						{/if}
@@ -199,14 +178,14 @@
 		<!-- Totals footer — each total sits under the zone it sums: penalties, scored, then total under +/− -->
 		<div class="summary-row" role="group" aria-label="Score">
 			<span class="row-label"></span>
-			<div class="stat" style:width="calc(var(--cell) * {MAX_PENALTY_DISPLAY})">
+			<div class="stat stat-penalty">
 				<span class="stat-label">Penalties</span>
 				<span class="stat-value" class:negative={scoreResult.negativeTotal < 0}>
 					{formatScore(scoreResult.negativeTotal)}
 				</span>
 			</div>
 			<span class="zone-gap"></span>
-			<div class="stat" style:width="calc(var(--cell) * {SCORING_MULTIPLIERS.length})">
+			<div class="stat stat-scored">
 				<span class="stat-label">Scored</span>
 				<span class="stat-value" class:positive={scoreResult.positiveTotal > 0}>
 					{scoreResult.positiveTotal > 0 ? `+${scoreResult.positiveTotal}` : '0'}
@@ -228,45 +207,45 @@
 
 	<!-- RIGHT SCORECARD — 5th-die meters in their own tinted panel. Filling all of them ends the player's game. -->
 	<div class="fifth-panel">
-	<div class="fifth-section">
-		<div class="fifth-header">
-			<span class="fifth-title">5th die</span>
-			<span class="fifth-count" title="Your game ends when all {RIGHT_SCORECARD_TOTAL} boxes are marked">
-				{rightMarkTotal} / {RIGHT_SCORECARD_TOTAL}
-			</span>
+		<div class="fifth-section">
+			<div class="fifth-header">
+				<span class="fifth-title">5th die</span>
+				<span class="fifth-count" title="Your game ends when all {RIGHT_SCORECARD_TOTAL} boxes are marked">
+					{rightMarkTotal} / {RIGHT_SCORECARD_TOTAL}
+				</span>
+			</div>
+			<div class="fifth-progress" aria-hidden="true">
+				<div class="fifth-progress-fill" style:width="{(rightMarkTotal / RIGHT_SCORECARD_TOTAL) * 100}%"></div>
+			</div>
+	
+			<div class="fifth-meters">
+				{#each RIGHT_SCORECARD_ROWS as dieValue}
+					{@const marks = scorecard.rightMarks[dieValue] ?? 0}
+					{@const full = isRightRowFull(dieValue)}
+					{@const almostFull = marks === RIGHT_SCORECARD_BOXES_PER_ROW - 1}
+					<div
+						class="fifth-meter"
+						class:full
+						class:almost-full={almostFull}
+						role="img"
+						aria-label="5th die {dieValue}: {marks} of {RIGHT_SCORECARD_BOXES_PER_ROW} marked{full ? ', full' : ''}"
+					>
+						<span class="fifth-die">
+							<DiceView value={dieValue} size={compact ? 16 : 20} />
+						</span>
+						<span class="fifth-boxes">
+							{#each { length: RIGHT_SCORECARD_BOXES_PER_ROW } as _, boxIdx}
+								<span
+									class="fifth-box"
+									class:filled={isRightBoxFilled(dieValue, boxIdx)}
+									class:preview={isRightPreviewBox(dieValue, boxIdx)}
+								></span>
+							{/each}
+						</span>
+					</div>
+				{/each}
+			</div>
 		</div>
-		<div class="fifth-progress" aria-hidden="true">
-			<div class="fifth-progress-fill" style:width="{(rightMarkTotal / RIGHT_SCORECARD_TOTAL) * 100}%"></div>
-		</div>
-
-		<div class="fifth-meters">
-			{#each RIGHT_SCORECARD_ROWS as dieValue}
-				{@const marks = scorecard.rightMarks[dieValue] ?? 0}
-				{@const full = isRightRowFull(dieValue)}
-				{@const almostFull = marks === RIGHT_SCORECARD_BOXES_PER_ROW - 1}
-				<div
-					class="fifth-meter"
-					class:full
-					class:almost-full={almostFull}
-					role="img"
-					aria-label="5th die {dieValue}: {marks} of {RIGHT_SCORECARD_BOXES_PER_ROW} marked{full ? ', full' : ''}"
-				>
-					<span class="fifth-die">
-						<DiceView value={dieValue} size={compact ? 16 : 20} />
-					</span>
-					<span class="fifth-boxes">
-						{#each { length: RIGHT_SCORECARD_BOXES_PER_ROW } as _, boxIdx}
-							<span
-								class="fifth-box"
-								class:filled={isRightBoxFilled(dieValue, boxIdx)}
-								class:preview={isRightPreviewBox(dieValue, boxIdx)}
-							></span>
-						{/each}
-					</span>
-				</div>
-			{/each}
-		</div>
-	</div>
 	</div>
 
 </div>
@@ -284,7 +263,10 @@
 		--sc-grid-line: color-mix(in srgb, var(--sc-border) 40%, transparent);
 		--sc-penalty-tint: color-mix(in srgb, var(--sc-mark-penalty) 12%, var(--card-bg));
 		--sc-scoring-tint: color-mix(in srgb, var(--sc-mark-scored) 12%, var(--card-bg));
-		--sc-zone-radius: 4px;
+		--sc-zone-radius: var(--radius-sm);
+		/* Zone widths in cells — match MAX_PENALTY_DISPLAY and SCORING_MULTIPLIERS.length */
+		--penalty-cols: 5;
+		--scoring-cols: 6;
 
 		/*
 		 * Text roles — sizes from the type scale (px, since they're bound to fixed
@@ -303,12 +285,18 @@
 		padding: var(--space-sm);
 		background: var(--card-bg);
 		border-radius: var(--radius-lg);
-		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-card);
 		overflow: auto;
 		font-size: var(--sc-body);
 		/* Equal-width digits keep the score column and totals aligned */
 		font-variant-numeric: tabular-nums;
 	}
+
+	/* Scorecard text size preference */
+	.text-small { --sc-scale: 0.85; }
+	.text-medium { --sc-scale: 0.92; }
+	.text-large { --sc-scale: 1; }
+	.text-extra_large { --sc-scale: 1.15; }
 
 	.scorecard.compact {
 		--cell: 22px;
@@ -348,6 +336,7 @@
 	}
 
 	.header-penalty {
+		width: calc(var(--cell) * var(--penalty-cols));
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -391,7 +380,7 @@
 
 	/* Almost scoring: amber band across the row, same cue as the 5th-die meters */
 	.scorecard-row.near-scoring {
-		background: rgba(255, 167, 38, 0.16);
+		background: var(--warning-tint);
 		border-radius: var(--sc-zone-radius);
 	}
 
@@ -399,8 +388,9 @@
 		color: var(--sc-near-text);
 	}
 
-	/* Boxes */
+	/* Boxes — positioned so the preview outline can overlay them */
 	.box {
+		position: relative;
 		width: var(--cell);
 		height: 100%;
 		border: 0.5px solid var(--sc-grid-line);
@@ -447,9 +437,29 @@
 		line-height: 1;
 	}
 
-	.box.preview {
-		border-style: dashed;
-		border-width: 1.5px;
+	/* Preview of the selected combination's marks, tinted in its pair's colour */
+	.box.preview-pair1 { --preview-color: var(--combo-pair1); }
+	.box.preview-pair2 { --preview-color: var(--combo-pair2); }
+
+	.box.preview.preview-pair1,
+	.box.preview.preview-pair2 {
+		background-color: color-mix(in srgb, var(--preview-color) 15%, transparent);
+	}
+
+	/*
+	 * Dashed preview outline drawn as an overlay above the cell, so neighbouring cells'
+	 * tinted backgrounds can't paint over its sides. It always has the same small radius on
+	 * all four corners: Safari skips the vertical sides of a dashed border whose corners
+	 * are square, so inheriting a zone cell's one-sided rounding lost the right edge.
+	 */
+	.box.preview::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		border: 1.5px dashed var(--preview-color, currentColor);
+		border-radius: var(--sc-zone-radius);
+		pointer-events: none;
 	}
 
 	/* Marks */
@@ -459,7 +469,11 @@
 		line-height: 1;
 	}
 
+	.penalty-mark { color: var(--sc-mark-penalty); }
+	.scored-mark { color: var(--sc-mark-scored); }
+
 	.preview-mark {
+		color: var(--preview-color);
 		opacity: 0.7;
 	}
 
@@ -477,7 +491,7 @@
 		text-align: right;
 		font-weight: 700;
 		flex-shrink: 0;
-		padding-right: 4px;
+		padding-right: var(--space-xs);
 		font-size: var(--sc-body);
 	}
 
@@ -531,7 +545,7 @@
 
 	.fifth-progress {
 		height: 4px;
-		border-radius: 2px;
+		border-radius: var(--space-2xs);
 		background: var(--sc-filled-bg);
 		overflow: hidden;
 	}
@@ -556,15 +570,15 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-sm);
-		padding: 2px;
+		padding: var(--space-2xs);
 		border: 1px solid transparent;
 		border-radius: var(--radius-sm);
 	}
 
 	/* Same amber "almost there" cue as near-scoring rows on the left grid */
 	.fifth-meter.almost-full {
-		border-color: #FFA726;
-		background: rgba(255, 167, 38, 0.1);
+		border-color: var(--warning);
+		background: color-mix(in srgb, var(--warning) 10%, transparent);
 	}
 
 	.fifth-meter.full .fifth-die {
@@ -580,7 +594,7 @@
 	.fifth-box {
 		width: min(24px, var(--cell));
 		height: 14px;
-		border-radius: 3px;
+		border-radius: var(--radius-xs);
 		border: 1px solid var(--sc-border);
 		background: var(--card-bg);
 		transition: background-color var(--transition-fast);
@@ -605,7 +619,6 @@
 		background: color-mix(in srgb, var(--combo-fifth) 25%, transparent);
 	}
 
-
 	/*
 	 * Totals footer — shares the grid's column widths. A rule over each zone reads like
 	 * the total line on a paper score sheet; all three values are the same size.
@@ -624,17 +637,20 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 2px;
+		gap: var(--space-2xs);
 		padding-top: var(--space-sm);
 		border-top: 1.5px solid var(--sc-border);
 		flex-shrink: 0;
 	}
 
+	.stat-penalty { width: calc(var(--cell) * var(--penalty-cols)); }
+	.stat-scored { width: calc(var(--cell) * var(--scoring-cols)); }
+
 	/* Total lines up with the +/− column: same width, right-aligned like the row scores */
 	.stat-total {
 		width: 40px;
 		align-items: flex-end;
-		padding-right: 4px;
+		padding-right: var(--space-xs);
 	}
 
 	.stat-label {
@@ -669,9 +685,43 @@
 		.summary-row { margin-top: var(--space-xs); }
 		.stat { padding-top: var(--space-xs); gap: 0; }
 		.fifth-panel { padding: var(--space-sm); }
-		.fifth-section { gap: var(--space-xs); }
-		.fifth-meters { row-gap: var(--space-xs); padding-top: 0; }
+
+		/*
+		 * Shorter panel: title, progress bar, and count share one line, and the meters
+		 * run 3 across (1–3 over 4–6) so they take two rows instead of three. The panel's
+		 * full width is shared out, so the boxes stretch to fill it.
+		 */
+		.fifth-section {
+			width: 100%;
+			display: grid;
+			grid-template-columns: auto 1fr auto;
+			align-items: center;
+			gap: var(--space-xs) var(--space-sm);
+		}
+		.fifth-header { display: contents; }
+		.fifth-title { grid-area: 1 / 1; }
+		.fifth-progress { grid-area: 1 / 2; }
+		.fifth-count { grid-area: 1 / 3; }
+		.fifth-meters {
+			grid-column: 1 / -1;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-rows: none;
+			grid-auto-flow: row;
+			gap: var(--space-xs) var(--space-sm);
+			padding-top: 0;
+		}
+		.fifth-meter { gap: var(--space-xs); }
 		.fifth-die :global(svg) { width: 16px; height: 16px; }
-		.fifth-box { height: 12px; }
+		.fifth-boxes { flex: 1; min-width: 0; gap: var(--space-2xs); }
+		.fifth-box { flex: 1; width: auto; max-width: 24px; height: 12px; }
+	}
+
+	/* Short portrait phones (e.g. Safari with its toolbars showing): slightly tighter still */
+	@media (max-width: 767px) and (orientation: portrait) and (max-height: 740px) {
+		.scorecard { gap: var(--space-xs); }
+		.scorecard-row { height: 20px; }
+		.header-row { height: 18px; }
+		.fifth-panel { padding: 6px var(--space-sm); }
+		.fifth-meter { padding: 1px var(--space-2xs); }
 	}
 </style>

@@ -29,8 +29,6 @@
 		large: 17,
 		extra_large: 21,
 	};
-	// Fixed hex (not a CSS var) because it's passed to an SVG stroke attribute
-	const FIFTH_STROKE = '#E65100';
 
 	let invalidReason = $derived(getInvalidReason(combination, scorecard));
 	let isValid = $derived(!invalidReason);
@@ -64,7 +62,7 @@
 		<span class="chip pair1">{combination.pair1Sum}</span>
 		<span class="chip pair2">{combination.pair2Sum}</span>
 		<span class="chip fifth">
-			<DiceView value={combination.fifthDie} size={DIE_SIZE[size]} borderColor={FIFTH_STROKE} />
+			<DiceView value={combination.fifthDie} size={DIE_SIZE[size]} />
 		</span>
 	</span>
 	{#if isValid}
@@ -94,13 +92,13 @@
 
 	.combo-card:hover:not(.invalid) {
 		border-color: var(--gold-amber);
-		box-shadow: 0 2px 8px rgba(196, 122, 16, 0.2);
+		box-shadow: var(--shadow-primary);
 	}
 
 	.combo-card.selected {
 		border-color: var(--gold-amber);
 		background: var(--pale-gold);
-		box-shadow: 0 2px 12px rgba(196, 122, 16, 0.3);
+		box-shadow: var(--shadow-primary-strong);
 	}
 
 	/* Unavailable: dashed outline and a visible reason instead of fading the whole card */
@@ -125,7 +123,7 @@
 		justify-content: center;
 		min-width: 1.6em;
 		height: 1.5em;
-		padding: 0 4px;
+		padding: 0 var(--space-xs);
 		border-radius: var(--radius-sm);
 		font-size: var(--chip-font);
 		font-weight: 700;
@@ -142,6 +140,7 @@
 	}
 
 	.chip.fifth {
+		--die-edge: var(--combo-fifth);
 		min-width: 1.5em;
 		padding: 0 3px;
 		background: color-mix(in srgb, var(--combo-fifth) 20%, transparent);
@@ -159,9 +158,9 @@
 	.impact.loss { color: var(--score-negative); }
 
 	/* Size variants — chip text steps through the type scale (xs / sm / base / lg) */
-	.size-small { --chip-font: var(--font-size-xs); padding: 4px; }
+	.size-small { --chip-font: var(--font-size-xs); padding: var(--space-xs); }
 	.size-medium { --chip-font: var(--font-size-sm); padding: 5px; }
-	.size-extra_large { --chip-font: var(--font-size-lg); padding: 8px; }
+	.size-extra_large { --chip-font: var(--font-size-lg); padding: var(--space-sm); }
 	.size-extra_large .impact,
 	.size-extra_large .reason { font-size: var(--font-size-xs); }
 </style>

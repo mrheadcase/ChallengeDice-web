@@ -1,7 +1,7 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
-	import { PLAYER_COLORS } from '$lib/game/constants';
 	import { PLAYER_COLOR_DEFAULTS, type PlayerColor } from '$lib/game/models';
 	import { sanitizeName } from '$lib/utils/validation';
 	import { getPreferences, savePreferences } from '$lib/stores/preferences.svelte';
@@ -121,10 +121,7 @@
 </script>
 
 <div class="online-page">
-	<header class="online-header">
-		<button class="back-btn" onclick={() => goto(base || '/')}>← Back</button>
-		<h2>Online Game</h2>
-	</header>
+	<PageHeader title="Online Game" flush onback={() => goto(base || '/')} />
 
 	{#if error}
 		<div class="error-banner">{error}</div>
@@ -137,11 +134,10 @@
 			<input type="text" class="name-input" placeholder="Your name" bind:value={playerName} maxlength="20" />
 			<div class="color-picker">
 				{#each PLAYER_COLOR_DEFAULTS as color}
-					{@const cs = PLAYER_COLORS[color]}
 					<button
 						class="color-swatch"
 						class:selected={playerColor === color}
-						style:background={cs.primary}
+						data-player={color}
 						aria-label={color}
 						onclick={() => { playerColor = color; }}
 					></button>
@@ -157,7 +153,7 @@
 			<input type="checkbox" bind:checked={isPublic} />
 			<span>Public (visible in lobby browser)</span>
 		</label>
-		<button class="action-btn primary" onclick={createGame} disabled={loading}>
+		<button class="btn btn-primary btn-block" onclick={createGame} disabled={loading}>
 			{loading ? 'Creating...' : 'Create Game'}
 		</button>
 	</div>
@@ -172,9 +168,8 @@
 				placeholder="Game Code"
 				bind:value={joinCode}
 				maxlength="6"
-				style="text-transform: uppercase"
 			/>
-			<button class="action-btn primary" onclick={joinByCode} disabled={loading}>Join</button>
+			<button class="btn btn-primary" onclick={joinByCode} disabled={loading}>Join</button>
 		</div>
 	</div>
 
@@ -190,8 +185,8 @@
 						<span class="game-meta">{game.playerCount} players • R{game.currentRound}</span>
 					</div>
 					<div class="game-actions">
-						<button class="small-btn primary" onclick={() => rejoinGame(game)}>Rejoin</button>
-						<button class="small-btn danger" onclick={() => dismissActiveGame(game)}>Dismiss</button>
+						<button class="btn btn-primary btn-sm" onclick={() => rejoinGame(game)}>Rejoin</button>
+						<button class="btn btn-danger btn-sm" onclick={() => dismissActiveGame(game)}>Dismiss</button>
 					</div>
 				</div>
 			{/each}
@@ -208,13 +203,13 @@
 						<span class="game-code">{lobby.code}</span>
 						<span class="game-meta">{lobby.hostName} • {lobby.playerCount}/{lobby.maxPlayers}</span>
 					</div>
-					<button class="small-btn primary" onclick={() => joinLobby(lobby)}>Join</button>
+					<button class="btn btn-primary btn-sm" onclick={() => joinLobby(lobby)}>Join</button>
 				</div>
 			{/each}
 		{:else}
 			<p class="empty-text">No open games found</p>
 		{/if}
-		<button class="refresh-btn" onclick={loadLobbiesAndGames}>Refresh</button>
+		<button class="btn-text btn-block" onclick={loadLobbiesAndGames}>Refresh</button>
 	</div>
 </div>
 
@@ -222,23 +217,20 @@
 	.online-page {
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
+		gap: var(--space-md);
 		height: 100%;
-		padding: 16px;
+		padding: var(--space-md);
 		overflow-y: auto;
 	}
 
-	.online-header { display: flex; align-items: center; gap: 16px; }
-	.back-btn { color: var(--gold-amber); font-weight: 600; padding: 8px; }
-	h2 { color: var(--text-dark); }
-	h3 { color: var(--gold-amber); font-size: var(--font-size-base); margin-bottom: 8px; }
+	h3 { color: var(--gold-amber); font-size: var(--font-size-base); margin-bottom: var(--space-sm); }
 
 	.error-banner {
-		background: #FFEBEE; color: var(--score-negative); padding: 10px 16px;
+		background: var(--error-tint); color: var(--score-negative); padding: 10px var(--space-md);
 		border-radius: var(--radius-md); font-weight: 600; font-size: var(--font-size-sm);
 	}
 
-	.section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 16px; }
+	.section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: var(--space-md); }
 
 	.identity-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 	.name-input {
@@ -249,59 +241,33 @@
 	.name-input:focus { outline: 2px solid var(--gold-amber); border-color: transparent; }
 
 	.color-picker { display: flex; gap: 6px; }
-	.color-swatch {
-		width: 36px; height: 36px; border-radius: 50%;
-		border: 3px solid transparent; transition: all var(--transition-fast);
-	}
-	.color-swatch.selected { border-color: var(--text-dark); box-shadow: 0 0 0 2px white inset; }
-
 	.toggle-row {
-		display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+		display: flex; align-items: center; gap: var(--space-sm); margin-bottom: 12px;
 		font-size: var(--font-size-sm); cursor: pointer;
 	}
 	.toggle-row input { width: 18px; height: 18px; accent-color: var(--gold-amber); }
 
-	.action-btn {
-		padding: 12px 24px; border-radius: var(--radius-lg); font-weight: 700;
-		font-size: var(--font-size-base); width: 100%;
-	}
-	.action-btn.primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
-	.action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
-	.join-row { display: flex; gap: 8px; }
+	.join-row { display: flex; gap: var(--space-sm); }
 	.code-input {
 		flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--warm-tan);
 		border-radius: var(--radius-md); font-size: var(--font-size-lg); font-weight: 700;
-		letter-spacing: 4px; text-align: center;
+		letter-spacing: 4px; text-align: center; text-transform: uppercase;
 		background: var(--input-bg); color: var(--text-dark);
 	}
-	.join-row .action-btn { width: auto; flex-shrink: 0; }
 
 	.game-card {
 		display: flex; align-items: center; justify-content: space-between;
 		padding: 10px; border: 1px solid var(--warm-tan); border-radius: var(--radius-md);
-		margin-bottom: 8px;
+		margin-bottom: var(--space-sm);
 	}
-	.game-info { display: flex; flex-direction: column; gap: 2px; }
+	.game-info { display: flex; flex-direction: column; gap: var(--space-2xs); }
 	.game-code { font-weight: 700; letter-spacing: 2px; }
 	.game-phase { font-size: var(--font-size-xs); color: var(--text-muted); text-transform: uppercase; }
 	.game-meta { font-size: var(--font-size-sm); color: var(--text-medium); }
 	.game-actions { display: flex; gap: 6px; }
 
-	.small-btn {
-		padding: 6px 14px; border-radius: var(--radius-md); font-weight: 600;
-		font-size: var(--font-size-sm);
-	}
-	.small-btn.primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
-	.small-btn.danger { background: var(--score-negative); color: white; }
-
 	.empty-text {
 		color: var(--text-muted); font-size: var(--font-size-sm);
-		font-style: italic; padding: 8px 0;
-	}
-
-	.refresh-btn {
-		padding: 10px; color: var(--gold-amber); font-weight: 600;
-		text-align: center; font-size: var(--font-size-sm); width: 100%;
+		font-style: italic; padding: var(--space-sm) 0;
 	}
 </style>

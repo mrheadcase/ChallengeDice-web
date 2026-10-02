@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Player } from '$lib/game/models';
 	import { calculateScore } from '$lib/game/logic';
-	import { PLAYER_COLORS } from '$lib/game/constants';
 
 	interface Props {
 		players: Player[];
@@ -14,7 +13,6 @@
 
 <div class="player-tabs" role="tablist">
 	{#each players as player, i}
-		{@const colors = PLAYER_COLORS[player.color]}
 		{@const score = calculateScore(player.scorecard).totalScore}
 		{@const isActive = i === activeIndex}
 		<button
@@ -24,21 +22,20 @@
 			role="tab"
 			aria-selected={isActive}
 			onclick={() => onselect?.(i)}
-			style:--tab-color={colors.primary}
-			style:--tab-light={colors.light}
+			data-player={player.color}
 		>
-			<span class="color-dot" style:background={colors.primary}></span>
-			<span class="player-name" class:ai={player.isAI}>
+			<span class="player-dot"></span>
+			<span class="player-name">
 				{player.name}
 				{#if player.isAI}
-					<span class="ai-badge">AI</span>
+					<span class="badge">AI</span>
 				{/if}
 			</span>
 			<span class="player-score" class:positive={score > 0} class:negative={score < 0}>
 				{score < 0 ? `−${Math.abs(score)}` : score}
 			</span>
 			{#if !player.isActive}
-				<span class="eliminated-badge">OUT</span>
+				<span class="badge badge-danger">OUT</span>
 			{/if}
 		</button>
 	{/each}
@@ -70,41 +67,22 @@
 	}
 
 	.player-tab.active {
-		border-color: var(--tab-color);
-		background: var(--tab-light);
+		border-color: var(--player);
+		background: var(--player-light);
 	}
 
 	:global(.theme-dark) .player-tab.active {
-		background: color-mix(in srgb, var(--tab-color) 25%, var(--card-bg));
+		background: color-mix(in srgb, var(--player) 25%, var(--card-bg));
 	}
 
 	.player-tab.eliminated {
 		opacity: 0.5;
 	}
 
-	.color-dot {
-		width: 10px;
-		height: 10px;
-		border-radius: 50%;
-		flex-shrink: 0;
-	}
-
 	.player-name {
 		font-weight: 600;
 		font-size: var(--font-size-sm);
 		color: var(--text-dark);
-	}
-
-	.ai-badge {
-		font-size: var(--font-size-2xs);
-		letter-spacing: var(--letter-spacing-wide);
-		line-height: var(--line-height-tight);
-		background: var(--text-muted);
-		color: white;
-		padding: 1px 4px;
-		border-radius: 3px;
-		font-weight: 700;
-		vertical-align: middle;
 	}
 
 	.player-score {
@@ -116,25 +94,25 @@
 	.player-score.positive { color: var(--score-positive); }
 	.player-score.negative { color: var(--score-negative); }
 
-	.eliminated-badge {
-		font-size: var(--font-size-2xs);
-		letter-spacing: var(--letter-spacing-wide);
-		line-height: var(--line-height-tight);
-		background: var(--score-negative);
-		color: white;
-		padding: 1px 4px;
-		border-radius: 3px;
-		font-weight: 700;
-	}
-
 	@media (min-width: 1024px) {
 		.player-tabs { padding: var(--space-md) var(--space-lg) 0; }
+	}
+
+	/* Portrait phones — shorter tabs leave more of the screen for the board */
+	@media (max-width: 767px) and (orientation: portrait) {
+		.player-tab { min-height: 36px; padding: var(--space-xs) 10px; }
+	}
+
+	/* Shortest portrait phones (e.g. Chrome on iOS with both bars showing) */
+	@media (max-width: 767px) and (orientation: portrait) and (max-height: 680px) {
+		.player-tabs { padding-top: 6px; }
+		.player-tab { min-height: 32px; padding: var(--space-2xs) 10px; }
 	}
 
 	/* Landscape on phones — compact tabs to save vertical space */
 	@media (orientation: landscape) and (max-height: 500px) {
 		.player-tabs { padding: var(--space-xs) var(--space-sm) 0; gap: var(--space-xs); }
-		.player-tab { padding: 3px 8px; gap: 4px; }
+		.player-tab { padding: 3px var(--space-sm); gap: var(--space-xs); }
 		.player-name, .player-score { font-size: var(--font-size-xs); }
 	}
 </style>

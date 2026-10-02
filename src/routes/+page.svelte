@@ -25,19 +25,20 @@
 		<!-- One primary action: Resume when a game is saved, otherwise New Local Game -->
 		<nav class="menu-buttons" aria-label="Play">
 			{#if hasSaved}
-				<button class="menu-btn primary" onclick={() => { localGame.resumeGame(); goto(`${base}/play/game`); }}>
+				<button class="btn btn-primary btn-lg menu-btn" onclick={() => { localGame.resumeGame(); goto(`${base}/play/game`); }}>
 					Resume Game
 				</button>
 			{/if}
 			<button
-				class="menu-btn"
-				class:primary={!hasSaved}
+				class="btn menu-btn"
+				class:btn-primary={!hasSaved}
+				class:btn-lg={!hasSaved}
 				class:quiet={hasSaved}
 				onclick={() => goto(`${base}/play/setup`)}
 			>
 				New Local Game
 			</button>
-			<button class="menu-btn secondary" onclick={() => goto(`${base}/online`)}>
+			<button class="btn btn-secondary menu-btn compact" onclick={() => goto(`${base}/online`)}>
 				Online Game
 			</button>
 		</nav>
@@ -54,17 +55,17 @@
 <style>
 	/*
 	 * Portrait: the poster spans the screen width (so the title is never clipped) and
-	 * the menu fills the space below it. On screens too short for both, the poster
-	 * narrows to leave ~220px for the menu and centres over a blurred copy of itself.
+	 * the menu fills the space below it. On screens too short for both, the menu keeps
+	 * its natural height (with or without Resume) and the poster shrinks into the rest,
+	 * centred over a blurred copy of itself.
 	 */
 	.main-menu {
-		--menu-space: 220px;
 		position: relative;
 		height: 100%;
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		background: #1A0D04;
+		background: var(--chrome-bg);
 	}
 
 	.backdrop {
@@ -77,24 +78,32 @@
 	.poster {
 		position: relative;
 		align-self: center;
-		flex-shrink: 0;
-		/* Poster is 2:3, so its height is 1.5× its width */
-		width: min(100%, calc((100dvh - var(--menu-space)) / 1.5));
+		/*
+		 * Always spans the full width. When the screen is too short for the whole poster
+		 * plus the menu, its box gets shorter and cover crops it: mostly the tiled floor
+		 * below the tagline (~bottom 15% of the art), with a little of the sky above the title.
+		 */
+		width: 100%;
+		aspect-ratio: 2 / 3;
 		height: auto;
-		/* Soften the bottom edge into the menu area */
-		mask-image: linear-gradient(to bottom, #000 90%, transparent 100%);
+		min-height: 0;
+		flex: 0 1 auto;
+		object-fit: cover;
+		object-position: 50% 30%;
+		/* Soften the bottom edge into the menu area, short enough to leave the tagline alone */
+		mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent 100%);
 	}
 
 	.menu-content {
 		position: relative;
 		z-index: 1;
-		flex: 1;
+		flex: 1 0 auto;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: var(--space-md);
-		padding: var(--space-md) var(--space-md) max(var(--space-md), env(safe-area-inset-bottom));
+		gap: var(--space-sm);
+		padding: var(--space-sm) var(--space-md) max(var(--space-sm), env(safe-area-inset-bottom));
 	}
 
 	.sr-only {
@@ -121,45 +130,30 @@
 		max-width: 320px;
 	}
 
+	/* Shared .btn styles; the menu only tightens padding and gives the primary a stronger glow */
 	.menu-btn {
-		padding: 14px var(--space-lg);
-		border-radius: var(--radius-lg);
-		font-weight: 700;
-		font-size: var(--font-size-lg);
-		line-height: var(--line-height-lg);
-		transition: background-color var(--transition-fast), border-color var(--transition-fast);
-	}
-
-	.menu-btn.primary {
-		background: var(--btn-primary-bg);
-		color: var(--btn-primary-text);
-		box-shadow: 0 2px 12px rgba(196, 122, 16, 0.4);
-	}
-	.menu-btn.primary:hover { background: #A86400; }
-
-	/* Online play keeps its purple identity, one size below the primary */
-	.menu-btn.secondary {
-		background: var(--btn-secondary-bg);
-		color: var(--btn-secondary-text);
-		box-shadow: 0 2px 12px rgba(107, 63, 160, 0.4);
-		font-size: var(--font-size-base);
-		line-height: var(--line-height-base);
 		padding: 12px var(--space-lg);
 	}
-	.menu-btn.secondary:hover { background: #5A3488; }
 
-	/* New Local Game when Resume is the primary: translucent outline */
+	.menu-btn.btn-primary {
+		box-shadow: var(--shadow-primary-strong);
+	}
+
+	/* One size below the primary: Online Game, and New Local Game when Resume is shown */
+	.menu-btn.compact,
 	.menu-btn.quiet {
-		background: rgba(26, 13, 4, 0.55);
-		color: #FAF6F0;
-		border: 1px solid rgba(240, 213, 144, 0.45);
-		font-size: var(--font-size-base);
-		line-height: var(--line-height-base);
-		padding: 12px var(--space-lg);
+		padding: 10px var(--space-lg);
+	}
+
+	/* New Local Game when Resume is the primary: translucent outline over the dark backdrop */
+	.menu-btn.quiet {
+		background: color-mix(in srgb, var(--chrome-bg) 55%, transparent);
+		color: var(--chrome-text);
+		border: 1px solid color-mix(in srgb, var(--chrome-accent) 45%, transparent);
 	}
 	.menu-btn.quiet:hover {
-		background: rgba(26, 13, 4, 0.75);
-		border-color: #F0D590;
+		background: color-mix(in srgb, var(--chrome-bg) 75%, transparent);
+		border-color: var(--chrome-accent);
 	}
 
 	.nav-links {
@@ -172,14 +166,14 @@
 
 	.nav-link {
 		flex: 1;
-		color: rgba(250, 246, 240, 0.85);
+		color: color-mix(in srgb, var(--chrome-text) 85%, transparent);
 		font-size: var(--font-size-sm);
 		font-weight: 600;
 		border-radius: var(--radius-md);
 	}
 	.nav-link:hover {
-		color: #F0D590;
-		background: rgba(255, 255, 255, 0.08);
+		color: var(--chrome-accent);
+		background: var(--chrome-hover);
 	}
 
 	/* Wide screens and landscape: full-height poster with the menu beside it */
@@ -217,7 +211,7 @@
 		.menu-content { gap: var(--space-sm); width: 280px; }
 		.menu-buttons { gap: var(--space-xs); }
 		.menu-btn { padding: 10px var(--space-md); font-size: var(--font-size-base); line-height: var(--line-height-base); }
-		.menu-btn.secondary, .menu-btn.quiet { padding: 8px var(--space-md); }
+		.menu-btn.compact, .menu-btn.quiet { padding: var(--space-sm) var(--space-md); }
 		.nav-link { min-height: 36px; }
 		/* No room for the dice icon on short landscape screens */
 		.dice-icon { display: none; }
