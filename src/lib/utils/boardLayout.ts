@@ -5,6 +5,11 @@ const wideLayout = new MediaQuery('(min-width: 1024px) and (min-height: 501px)')
 const shortPhone = new MediaQuery('(max-width: 767px) and (orientation: portrait) and (max-height: 740px)');
 const landscapePhone = new MediaQuery('(orientation: landscape) and (max-height: 500px)');
 
+/** True in the desktop layout, where the scorecard's summary moves to the left column. Reactive. */
+export function isWideBoard(): boolean {
+	return wideLayout.current;
+}
+
 /**
  * Die size for the game board: larger in the desktop two-column layout, smaller on
  * short portrait phones where every pixel goes to the scorecard, and on landscape phones

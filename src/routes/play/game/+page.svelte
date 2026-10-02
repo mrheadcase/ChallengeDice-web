@@ -5,7 +5,7 @@
 	import GameLayout from '$lib/components/GameLayout.svelte';
 	import DiceDisplay from '$lib/components/DiceDisplay.svelte';
 	import CombinationGrid from '$lib/components/CombinationGrid.svelte';
-	import Scorecard from '$lib/components/Scorecard.svelte';
+	import Scorecard, { type ScorecardPart } from '$lib/components/Scorecard.svelte';
 	import PlayerTabs from '$lib/components/PlayerTabs.svelte';
 	import EliminationDialog from '$lib/components/EliminationDialog.svelte';
 	import SettingsDialog from '$lib/components/SettingsDialog.svelte';
@@ -196,11 +196,12 @@
 		{/if}
 	{/snippet}
 
-	{#snippet scorecard()}
+	{#snippet scorecard(part: ScorecardPart)}
 		{#if viewingPlayer}
 			<Scorecard
 				scorecard={viewingPlayer.scorecard}
 				previewCombination={viewingPlayerIndex === gameState.currentPlayerIndex ? selectedCombo : null}
+				{part}
 			/>
 		{/if}
 	{/snippet}

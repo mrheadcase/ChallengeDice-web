@@ -11,6 +11,8 @@
 	import type { Snippet } from 'svelte';
 	import { base } from '$app/paths';
 	import { preferences } from '$lib/stores/preferences.svelte';
+	import { isWideBoard } from '$lib/utils/boardLayout';
+	import type { ScorecardPart } from './Scorecard.svelte';
 
 	interface Props {
 		round: number;
@@ -21,10 +23,13 @@
 		onsettings: () => void;
 		tabs: Snippet;
 		turn: Snippet;
-		scorecard: Snippet;
+		/** Renders the scorecard, or one part of it — desktop shows the summary under the turn panel */
+		scorecard: Snippet<[ScorecardPart]>;
 	}
 
 	let { round, leading, notice, onsettings, tabs, turn, scorecard }: Props = $props();
+
+	let wide = $derived(isWideBoard());
 </script>
 
 <!-- The combination size preference sets the card row height the turn panel is sized from -->
@@ -54,8 +59,14 @@
 			{@render turn()}
 		</div>
 
+		{#if wide}
+			<div class="summary-panel">
+				{@render scorecard('summary')}
+			</div>
+		{/if}
+
 		<div class="scorecard-section">
-			{@render scorecard()}
+			{@render scorecard(wide ? 'lanes' : 'full')}
 		</div>
 	</div>
 </div>
@@ -207,15 +218,21 @@
 			max-width: 1440px;
 			margin-inline: auto;
 		}
+		/*
+		 * Left column: the turn panel takes the height the summary card (totals + 5th die)
+		 * leaves; right column: the lanes, full height
+		 */
 		.board {
 			display: grid;
 			/* 460px fits the grouped 68px dice (5 × 68 + 56) inside the panel padding */
 			grid-template-columns: 460px minmax(0, 1fr);
-			grid-template-rows: minmax(0, 1fr);
+			grid-template-rows: minmax(0, 1fr) auto;
 			gap: var(--space-lg);
 			padding: var(--space-lg) var(--space-xl);
 		}
 		.turn-panel {
+			grid-column: 1;
+			grid-row: 1;
 			overflow: hidden auto;
 			justify-content: center;
 			gap: var(--space-lg);
@@ -223,6 +240,14 @@
 			background: var(--card-bg);
 			border-radius: var(--radius-lg);
 			box-shadow: var(--shadow-card);
+		}
+		.summary-panel {
+			grid-column: 1;
+			grid-row: 2;
+		}
+		.scorecard-section {
+			grid-column: 2;
+			grid-row: 1 / 3;
 		}
 		/* Combo cards sit on the page colour so they stay distinct inside the panel card */
 		.turn-panel :global(.combo-card:not(.selected):not(.invalid)) {

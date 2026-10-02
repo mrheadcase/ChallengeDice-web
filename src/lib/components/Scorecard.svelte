@@ -1,3 +1,8 @@
+<script lang="ts" module>
+	/** full: the whole sheet. lanes / summary: the two halves the desktop layout places apart. */
+	export type ScorecardPart = 'full' | 'lanes' | 'summary';
+</script>
+
 <script lang="ts">
 	/*
 	 * Scorecard — "progress lanes". Each row is a lane: penalty pips, then six scoring
@@ -20,12 +25,15 @@
 		scorecard: ScorecardType;
 		previewCombination?: DiceCombination | null;
 		compact?: boolean;
+		/** Which part to render: the desktop layout shows the lanes and the summary (totals + 5th die) separately */
+		part?: ScorecardPart;
 	}
 
 	let {
 		scorecard,
 		previewCombination = null,
 		compact = false,
+		part = 'full',
 	}: Props = $props();
 
 	type Role = 'pair1' | 'pair2';
@@ -96,7 +104,8 @@
 	);
 </script>
 
-<div class="scorecard text-{preferences.current.scorecardTextSize}" class:compact>
+<div class="scorecard part-{part} text-{preferences.current.scorecardTextSize}" class:compact>
+	{#if part !== 'lanes'}
 	<!-- Totals — on the lanes' column grid: penalties over the pips, scored over the cells, total over pts -->
 	<div class="lane-grid totals" role="group" aria-label="Score">
 		<div class="stat stat-penalties">
@@ -123,7 +132,9 @@
 			</div>
 		</div>
 	</div>
+	{/if}
 
+	{#if part !== 'summary'}
 	<div class="lanes">
 		<div class="lane-grid lane-header" aria-hidden="true">
 			<span></span>
@@ -163,7 +174,9 @@
 			</div>
 		{/each}
 	</div>
+	{/if}
 
+	{#if part !== 'lanes'}
 	<!-- 5th-die meters — filling all of them ends the player's game -->
 	<div class="fifth">
 		<div class="fifth-header">
@@ -198,6 +211,7 @@
 			{/each}
 		</div>
 	</div>
+	{/if}
 </div>
 
 <style>
@@ -562,6 +576,33 @@
 			gap: 6px;
 			padding: var(--space-sm) 10px;
 		}
+	}
+
+	/*
+	 * Summary card (desktop left column): the totals in one row, and the 5th-die meters in
+	 * three columns with the boxes beside each die
+	 */
+	.part-summary {
+		gap: var(--space-md);
+	}
+	.part-summary .totals {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--space-md);
+	}
+	.part-summary .totals-right {
+		flex: 1;
+		padding-left: 0;
+	}
+	.part-summary .stat-penalties { align-items: flex-start; }
+	.part-summary .fifth-meters {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--space-sm);
+	}
+	.part-summary .meter {
+		flex-direction: row;
+		gap: var(--space-sm);
+		padding: var(--space-sm) 10px;
 	}
 
 	/*
