@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+	<!-- Challenge Dice app icon: a gold die showing five, in the app's amber/brown palette -->
+	<defs>
+		<linearGradient id="face" x1="0" y1="0" x2="1" y2="1">
+			<stop offset="0" stop-color="#F5C04A"/>
+			<stop offset="1" stop-color="#C47A10"/>
+		</linearGradient>
+	</defs>
+	<rect x="4" y="4" width="56" height="56" rx="13" fill="url(#face)" stroke="#2B1A0E" stroke-width="4"/>
+	<!-- Soft highlight along the top edge for a little depth at larger sizes -->
+	<rect x="10" y="9" width="44" height="10" rx="5" fill="#FFFFFF" opacity="0.18"/>
+	<g fill="#2B1A0E">
+		<circle cx="19.5" cy="19.5" r="5.5"/>
+		<circle cx="44.5" cy="19.5" r="5.5"/>
+		<circle cx="32" cy="32" r="5.5"/>
+		<circle cx="19.5" cy="44.5" r="5.5"/>
+		<circle cx="44.5" cy="44.5" r="5.5"/>
+	</g>
+</svg>
