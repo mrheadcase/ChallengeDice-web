@@ -201,7 +201,7 @@
 					role="img"
 					aria-label="5th die {dieValue}: {marks} of {RIGHT_SCORECARD_BOXES_PER_ROW} marked{full ? ', full' : ''}"
 				>
-					<DiceView value={dieValue} size={compact ? 14 : 16} />
+					<DiceView value={dieValue} size={compact ? 14 : part === 'summary' ? 28 : 16} />
 					<span class="meter-boxes">
 						{#each { length: RIGHT_SCORECARD_BOXES_PER_ROW } as _, i}
 							<span class="meter-box" class:filled={i < marks} class:preview={previewing && i === marks}></span>
@@ -601,9 +601,13 @@
 	}
 	.part-summary .meter {
 		flex-direction: row;
-		gap: var(--space-sm);
-		padding: var(--space-sm) 10px;
+		gap: 10px;
+		padding: 10px 12px;
 	}
+	.part-summary .meter-boxes { gap: 3px; }
+	/* Beats the tablet-and-up box height further down */
+	.scorecard.part-summary:not(.compact) .meter-box { height: 14px; border-radius: 3px; }
+	.part-summary .fifth-title { font-size: var(--font-size-sm); }
 
 	/*
 	 * Landscape phones: too short for a 5th-die row under the lanes, so the meters become
