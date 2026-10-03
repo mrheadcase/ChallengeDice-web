@@ -10,6 +10,8 @@
 		selectedCombination?: DiceCombination | null;
 		rolling?: boolean;
 		diceSize?: number;
+		/** Called once a roll's animation has finished and every die is at rest */
+		onsettled?: () => void;
 	}
 
 	let {
@@ -17,11 +19,20 @@
 		selectedCombination = null,
 		rolling = false,
 		diceSize = 56,
+		onsettled,
 	}: Props = $props();
 
 	// Real 3D cubes that tumble and land (Dice3D); the flat dice below when motion is reduced
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 	let use3d = $derived(!reducedMotion.current);
+
+	// The flat dice are at rest as soon as rolling ends; the 3D ones report when the last lands
+	let wasRolling = false;
+	$effect(() => {
+		const r = rolling;
+		if (wasRolling && !r && !use3d) onsettled?.();
+		wasRolling = r;
+	});
 
 	// Temporary random values shown during rolling animation
 	let rollingValues = $state([1, 1, 1, 1, 1]);
@@ -201,7 +212,8 @@
 			style:transform="translateX({getTranslateX(i)}px)"
 		>
 			{#if use3d}
-				<Dice3D value={diceValues[i] ?? 1} size={diceSize} {rolling} index={i} />
+				<!-- The last die lands last (staggered), so its landing ends the roll -->
+				<Dice3D value={diceValues[i] ?? 1} size={diceSize} {rolling} index={i} onlanded={i === 4 ? onsettled : undefined} />
 			{:else}
 				<DiceView value={displayValue(i)} size={diceSize} rotationDegrees={rotation(i)} />
 			{/if}

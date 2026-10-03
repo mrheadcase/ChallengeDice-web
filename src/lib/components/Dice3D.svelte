@@ -16,9 +16,11 @@
 		rolling: boolean;
 		/** Position in the row, for staggering the throw and the landing */
 		index: number;
+		/** Called when the die comes to rest after a roll */
+		onlanded?: () => void;
 	}
 
-	let { value, size, rolling, index }: Props = $props();
+	let { value, size, rolling, index, onlanded }: Props = $props();
 
 	// Where each face sits on the cube: a real die, opposite faces adding up to 7
 	const FACES: { value: number; transform: string }[] = [
@@ -162,6 +164,7 @@
 				pose.rz = ((to.rz % 360) + 360) % 360;
 				render();
 				setResting(true);
+				onlanded?.();
 			}
 		};
 		frame = requestAnimationFrame(step);

@@ -17,6 +17,8 @@
 	import { boardDiceSize } from '$lib/utils/boardLayout';
 
 	let rolling = $state(false);
+	// After rolling, until the dice have landed: the combinations stay hidden
+	let landing = $state(false);
 	let selectedCombo = $state<DiceCombination | null>(null);
 	let viewingPlayerIndex = $state(0);
 	let autoRolledRound = $state(-1);
@@ -85,12 +87,15 @@
 	async function handleRoll() {
 		if (!onlineGame.isLocalPlayerRoller || rolling) return;
 		rolling = true;
+		landing = true;
 		selectedCombo = null;
 		playRollingSound(900);
 		tryVibrate(50);
 		setTimeout(async () => {
 			await onlineGame.rollDice();
 			rolling = false;
+			// The dice report landing (onsettled); this only covers a roll that never animated
+			setTimeout(() => { landing = false; }, 1500);
 		}, 900);
 	}
 
@@ -148,7 +153,13 @@
 		{/if}
 
 		{#if gameState.diceValues.length > 0}
-			<DiceDisplay diceValues={gameState.diceValues} {rolling} {diceSize} selectedCombination={selectedCombo} />
+			<DiceDisplay
+				diceValues={gameState.diceValues}
+				{rolling}
+				{diceSize}
+				selectedCombination={selectedCombo}
+				onsettled={() => { landing = false; }}
+			/>
 		{/if}
 
 		{#if gameState.phase === 'SELECTING'}
@@ -161,6 +172,7 @@
 						scorecard={gameState.players[localIdx]?.scorecard ?? { leftMarks: {}, rightMarks: {} }}
 						selectedCombination={selectedCombo}
 						onselect={handleSelectCombo}
+						loading={rolling || landing}
 					/>
 					{#if selectedCombo}
 						<button class="btn btn-success btn-block confirm-btn" onclick={handleConfirmSelection}>Confirm <span class="move-points">{movePoints}</span></button>
