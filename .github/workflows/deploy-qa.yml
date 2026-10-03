@@ -1,0 +1,52 @@
+# Builds the qa branch and publishes it to the rolling "qa-latest"
+# pre-release. The QA server pulls from there on its own (scripts/pull-qa-deploy.sh,
+# run by cron as the deploy user), so GitHub never needs access to the LAN.
+name: Deploy to QA
+
+on:
+  push:
+    branches: [qa]
+
+permissions:
+  contents: write # create/update the qa-latest release
+
+concurrency:
+  group: deploy-qa
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+
+      # The QA site serves from the domain root, not /ChallengeDice-web
+      - run: npm run build
+        env:
+          BASE_PATH: ''
+
+      - name: Package
+        run: |
+          tar czf challengedice-qa.tar.gz -C build .
+          # Manifest the server checks: commit, then the tarball's checksum
+          echo "$GITHUB_SHA $(sha256sum challengedice-qa.tar.gz | cut -d' ' -f1)" > version.txt
+
+      - name: Publish to the qa-latest pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view qa-latest > /dev/null 2>&1; then
+            gh release create qa-latest --prerelease --target "$GITHUB_SHA" \
+              --title "QA build" \
+              --notes "Latest build of the qa branch, picked up automatically by the QA server. Replaced on every push."
+          fi
+          gh release upload qa-latest challengedice-qa.tar.gz --clobber
+          # Uploaded last: the server treats a new version.txt as the signal to deploy
+          gh release upload qa-latest version.txt --clobber
