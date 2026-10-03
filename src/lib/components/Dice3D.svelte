@@ -14,13 +14,15 @@
 		value: number;
 		size: number;
 		rolling: boolean;
-		/** Position in the row, for staggering the throw and the landing */
+		/** Position in the row, for staggering the throw */
 		index: number;
+		/** Turn to land in, 0–4 (shuffled each roll), for staggering the landing */
+		landSlot: number;
 		/** Called when the die comes to rest after a roll */
 		onlanded?: () => void;
 	}
 
-	let { value, size, rolling, index, onlanded }: Props = $props();
+	let { value, size, rolling, index, landSlot, onlanded }: Props = $props();
 
 	// Where each face sits on the cube: a real die, opposite faces adding up to 7
 	const FACES: { value: number; transform: string }[] = [
@@ -141,7 +143,7 @@
 			// Lands square to the board, at whichever quarter turn is next
 			rz: ahead(from.rz, 0, Math.sign(spin.z) || 1, 30, 90),
 		};
-		const delay = index * STAGGER_MS;
+		const delay = landSlot * STAGGER_MS;
 		let start = 0;
 
 		const step = (now: number) => {

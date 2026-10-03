@@ -26,10 +26,33 @@
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 	let use3d = $derived(!reducedMotion.current);
 
-	// The flat dice are at rest as soon as rolling ends; the 3D ones report when the last lands
+	// The order the 3D dice land in, shuffled each roll so they don't always settle left to right
+	let landOrder = $state([0, 1, 2, 3, 4]);
+	let landed = 0;
+
+	function shuffledSlots(): number[] {
+		const slots = [0, 1, 2, 3, 4];
+		for (let i = slots.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[slots[i], slots[j]] = [slots[j], slots[i]];
+		}
+		return slots;
+	}
+
+	// The roll is over once all five 3D dice have landed
+	function dieLanded() {
+		landed++;
+		if (landed === 5) onsettled?.();
+	}
+
+	// The flat dice are at rest as soon as rolling ends
 	let wasRolling = false;
 	$effect(() => {
 		const r = rolling;
+		if (!wasRolling && r) {
+			landOrder = shuffledSlots();
+			landed = 0;
+		}
 		if (wasRolling && !r && !use3d) onsettled?.();
 		wasRolling = r;
 	});
@@ -212,8 +235,7 @@
 			style:transform="translateX({getTranslateX(i)}px)"
 		>
 			{#if use3d}
-				<!-- The last die lands last (staggered), so its landing ends the roll -->
-				<Dice3D value={diceValues[i] ?? 1} size={diceSize} {rolling} index={i} onlanded={i === 4 ? onsettled : undefined} />
+				<Dice3D value={diceValues[i] ?? 1} size={diceSize} {rolling} index={i} landSlot={landOrder[i]} onlanded={dieLanded} />
 			{:else}
 				<DiceView value={displayValue(i)} size={diceSize} rotationDegrees={rotation(i)} />
 			{/if}
