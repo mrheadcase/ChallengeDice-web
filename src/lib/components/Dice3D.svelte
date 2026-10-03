@@ -14,15 +14,15 @@
 		value: number;
 		size: number;
 		rolling: boolean;
-		/** Position in the row, for staggering the throw */
-		index: number;
+		/** Turn to be thrown in, 0–4 (shuffled each roll), for staggering the throw */
+		throwSlot: number;
 		/** Turn to land in, 0–4 (shuffled each roll), for staggering the landing */
 		landSlot: number;
 		/** Called when the die comes to rest after a roll */
 		onlanded?: () => void;
 	}
 
-	let { value, size, rolling, index, landSlot, onlanded }: Props = $props();
+	let { value, size, rolling, throwSlot, landSlot, onlanded }: Props = $props();
 
 	// Where each face sits on the cube: a real die, opposite faces adding up to 7
 	const FACES: { value: number; transform: string }[] = [
@@ -97,8 +97,9 @@
 		spin = { x: sign() * rand(620, 900), y: sign() * rand(520, 820), z: sign() * rand(90, 260) };
 		// Throw distance and bounce height scale with the die, so small phone dice stay in their row
 		const k = size / 68;
-		const startX = -(160 + index * 26) * k;
-		const delay = index * STAGGER_MS;
+		// Later throws start further out, so each die still flies in from beyond the one before it
+		const startX = -(160 + throwSlot * 26) * k;
+		const delay = throwSlot * STAGGER_MS;
 		let start = 0;
 		let last = 0;
 

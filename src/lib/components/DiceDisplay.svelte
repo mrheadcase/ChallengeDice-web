@@ -26,7 +26,9 @@
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 	let use3d = $derived(!reducedMotion.current);
 
-	// The order the 3D dice land in, shuffled each roll so they don't always settle left to right
+	// The order the 3D dice are thrown in and land in, each shuffled every roll so neither
+	// always runs left to right
+	let throwOrder = $state([0, 1, 2, 3, 4]);
 	let landOrder = $state([0, 1, 2, 3, 4]);
 	let landed = 0;
 
@@ -49,10 +51,6 @@
 	let wasRolling = false;
 	$effect(() => {
 		const r = rolling;
-		if (!wasRolling && r) {
-			landOrder = shuffledSlots();
-			landed = 0;
-		}
 		if (wasRolling && !r && !use3d) onsettled?.();
 		wasRolling = r;
 	});
@@ -162,6 +160,10 @@
 
 	$effect.pre(() => {
 		if (rolling && !prevRolling) {
+			// Before the dice see the roll start, so their throw uses this roll's order
+			throwOrder = shuffledSlots();
+			landOrder = shuffledSlots();
+			landed = 0;
 			// Immediately hide dice offscreen
 			settledCount = 0;
 			enteringDice = true;
@@ -235,7 +237,7 @@
 			style:transform="translateX({getTranslateX(i)}px)"
 		>
 			{#if use3d}
-				<Dice3D value={diceValues[i] ?? 1} size={diceSize} {rolling} index={i} landSlot={landOrder[i]} onlanded={dieLanded} />
+				<Dice3D value={diceValues[i] ?? 1} size={diceSize} {rolling} throwSlot={throwOrder[i]} landSlot={landOrder[i]} onlanded={dieLanded} />
 			{:else}
 				<DiceView value={displayValue(i)} size={diceSize} rotationDegrees={rotation(i)} />
 			{/if}
