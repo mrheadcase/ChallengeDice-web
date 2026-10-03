@@ -142,8 +142,8 @@
 			<span class="total-values">
 				<span class="stat-value {signClass(scoreResult.totalScore)}">{formatScore(scoreResult.totalScore)}</span>
 				{#if projectedTotal !== null}
-					<!-- Colour carries the sign here; the hidden text says it for screen readers -->
-					<span class="projected {signClass(projectedTotal)}" aria-hidden="true">→ {Math.abs(projectedTotal)}</span>
+					<!-- The arrow is visual only; the hidden text says it for screen readers -->
+					<span class="projected {signClass(projectedTotal)}" aria-hidden="true">→ {formatScore(projectedTotal)}</span>
 					<span class="sr-only">after this move: {formatScore(projectedTotal)}</span>
 				{/if}
 			</span>
