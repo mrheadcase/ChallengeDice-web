@@ -1,7 +1,10 @@
 <script lang="ts">
 	// Row of 5 dice with roll animation — ported from GameComponents.kt DiceDisplayRow
 	import DiceView from './DiceView.svelte';
+	import Dice3D from './Dice3D.svelte';
 	import type { DiceCombination } from '$lib/game/models';
+	import { isWideBoard } from '$lib/utils/boardLayout';
+	import { MediaQuery } from 'svelte/reactivity';
 
 	interface Props {
 		diceValues: number[];
@@ -16,6 +19,10 @@
 		rolling = false,
 		diceSize = 56,
 	}: Props = $props();
+
+	// Desktop board: real 3D cubes that tumble and land (Dice3D); elsewhere the flat dice below
+	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+	let use3d = $derived(isWideBoard() && !reducedMotion.current);
 
 	// Temporary random values shown during rolling animation
 	let rollingValues = $state([1, 1, 1, 1, 1]);
@@ -188,13 +195,17 @@
 		<!-- Entrance stagger and regroup offset are computed per die, so they stay inline -->
 		<div
 			class="die-wrapper {role ? `role-${role}` : ''}"
-			class:settled={!rolling || i < settledCount}
-			class:offscreen={enteringDice && i >= enteredCount}
-			class:entering={enteringDice && i < enteredCount}
+			class:settled={use3d || !rolling || i < settledCount}
+			class:offscreen={!use3d && enteringDice && i >= enteredCount}
+			class:entering={!use3d && enteringDice && i < enteredCount}
 			style:animation-delay="{i * 80}ms"
 			style:transform="translateX({getTranslateX(i)}px)"
 		>
-			<DiceView value={displayValue(i)} size={diceSize} rotationDegrees={rotation(i)} />
+			{#if use3d}
+				<Dice3D value={diceValues[i] ?? 1} size={diceSize} {rolling} index={i} />
+			{:else}
+				<DiceView value={displayValue(i)} size={diceSize} rotationDegrees={rotation(i)} />
+			{/if}
 			{#if groupLabel}
 				<span class="group-label" class:span-2={groupLabel.dice === 2}>{groupText(groupLabel.role)}</span>
 			{/if}
