@@ -36,7 +36,7 @@
 		const sc = gameState.players[localIdx]?.scorecard;
 		if (!selectedCombo || !sc) return '';
 		const d = calculateScore(applySelection(sc, selectedCombo)).totalScore - calculateScore(sc).totalScore;
-		return d > 0 ? `+${d}` : d < 0 ? `−${Math.abs(d)}` : '0';
+		return d > 0 ? `+${d}` : d < 0 ? `-${Math.abs(d)}` : '0';
 	});
 
 	// Start observing if not already

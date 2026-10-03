@@ -47,9 +47,9 @@
 		previewCombination ? calculateScore(applySelection(scorecard, previewCombination)).totalScore : null
 	);
 
-	// True minus sign (−); hyphens read as dashes
+	// Plain hyphen-minus: the true minus sign (U+2212) reads as long as a dash in this font
 	function formatScore(n: number): string {
-		return n < 0 ? `−${Math.abs(n)}` : String(n);
+		return n < 0 ? `-${Math.abs(n)}` : String(n);
 	}
 
 	function signClass(n: number): string {
@@ -155,7 +155,7 @@
 	<div class="lanes" bind:this={lanesEl} style:--row-h={rowHeight === null ? null : `${rowHeight}px`}>
 		<div class="lane-grid lane-header" aria-hidden="true">
 			<span></span>
-			<span class="header-penalty">−10 each</span>
+			<span class="header-penalty">-10 each</span>
 			<span class="cells">
 				{#each SCORING_MULTIPLIERS as mult}
 					<span>×{mult}</span>
@@ -437,7 +437,7 @@
 		border-color: var(--sc-penalty);
 	}
 
-	/* Past the penalty zone: the −10 no longer applies */
+	/* Past the penalty zone: the -10 no longer applies */
 	.pip.cleared {
 		background: color-mix(in srgb, var(--text-muted) 30%, transparent);
 		border-color: transparent;

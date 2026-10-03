@@ -35,7 +35,7 @@
 		if (!selectedCombo || !currentPlayer) return '';
 		const sc = currentPlayer.scorecard;
 		const d = calculateScore(applySelection(sc, selectedCombo)).totalScore - calculateScore(sc).totalScore;
-		return d > 0 ? `+${d}` : d < 0 ? `−${Math.abs(d)}` : '0';
+		return d > 0 ? `+${d}` : d < 0 ? `-${Math.abs(d)}` : '0';
 	});
 	let viewingPlayer = $derived(gameState.players[viewingPlayerIndex]);
 
