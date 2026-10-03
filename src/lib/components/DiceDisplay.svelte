@@ -1,13 +1,17 @@
 <script lang="ts">
 	// Row of 5 dice with roll animation — ported from GameComponents.kt DiceDisplayRow
 	import DiceView from './DiceView.svelte';
+	import Dice3D from './Dice3D.svelte';
 	import type { DiceCombination } from '$lib/game/models';
+	import { MediaQuery } from 'svelte/reactivity';
 
 	interface Props {
 		diceValues: number[];
 		selectedCombination?: DiceCombination | null;
 		rolling?: boolean;
 		diceSize?: number;
+		/** Called once a roll's animation has finished and every die is at rest */
+		onsettled?: () => void;
 	}
 
 	let {
@@ -15,7 +19,43 @@
 		selectedCombination = null,
 		rolling = false,
 		diceSize = 56,
+		onsettled,
 	}: Props = $props();
+
+	// Real 3D cubes that tumble and land (Dice3D); the flat dice below when motion is reduced
+	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+	let use3d = $derived(!reducedMotion.current);
+
+	// The order the 3D dice are thrown in and land in, each shuffled every roll so neither
+	// always runs left to right
+	let throwOrder = $state([0, 1, 2, 3, 4]);
+	// Where the roll comes from, below the row: 0 straight up, ± from the lower left / right
+	let throwAngle = $state(0);
+	let landOrder = $state([0, 1, 2, 3, 4]);
+	let landed = 0;
+
+	function shuffledSlots(): number[] {
+		const slots = [0, 1, 2, 3, 4];
+		for (let i = slots.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[slots[i], slots[j]] = [slots[j], slots[i]];
+		}
+		return slots;
+	}
+
+	// The roll is over once all five 3D dice have landed
+	function dieLanded() {
+		landed++;
+		if (landed === 5) onsettled?.();
+	}
+
+	// The flat dice are at rest as soon as rolling ends
+	let wasRolling = false;
+	$effect(() => {
+		const r = rolling;
+		if (wasRolling && !r && !use3d) onsettled?.();
+		wasRolling = r;
+	});
 
 	// Temporary random values shown during rolling animation
 	let rollingValues = $state([1, 1, 1, 1, 1]);
@@ -122,6 +162,11 @@
 
 	$effect.pre(() => {
 		if (rolling && !prevRolling) {
+			// Before the dice see the roll start, so their throw uses this roll's order
+			throwOrder = shuffledSlots();
+			throwAngle = (Math.random() * 2 - 1) * 55;
+			landOrder = shuffledSlots();
+			landed = 0;
 			// Immediately hide dice offscreen
 			settledCount = 0;
 			enteringDice = true;
@@ -188,13 +233,17 @@
 		<!-- Entrance stagger and regroup offset are computed per die, so they stay inline -->
 		<div
 			class="die-wrapper {role ? `role-${role}` : ''}"
-			class:settled={!rolling || i < settledCount}
-			class:offscreen={enteringDice && i >= enteredCount}
-			class:entering={enteringDice && i < enteredCount}
+			class:settled={use3d || !rolling || i < settledCount}
+			class:offscreen={!use3d && enteringDice && i >= enteredCount}
+			class:entering={!use3d && enteringDice && i < enteredCount}
 			style:animation-delay="{i * 80}ms"
 			style:transform="translateX({getTranslateX(i)}px)"
 		>
-			<DiceView value={displayValue(i)} size={diceSize} rotationDegrees={rotation(i)} />
+			{#if use3d}
+				<Dice3D value={diceValues[i] ?? 1} size={diceSize} {rolling} throwSlot={throwOrder[i]} {throwAngle} landSlot={landOrder[i]} onlanded={dieLanded} />
+			{:else}
+				<DiceView value={displayValue(i)} size={diceSize} rotationDegrees={rotation(i)} />
+			{/if}
 			{#if groupLabel}
 				<span class="group-label" class:span-2={groupLabel.dice === 2}>{groupText(groupLabel.role)}</span>
 			{/if}
@@ -205,6 +254,9 @@
 <style>
 	/* Bottom padding always reserves the caption line so selecting a combo doesn't shift the layout */
 	.dice-row {
+		/* Above the combinations, which the dice fly over on their way in */
+		position: relative;
+		z-index: 2;
 		display: flex;
 		gap: var(--space-sm);
 		justify-content: center;

@@ -16,6 +16,8 @@
 	import { boardDiceSize } from '$lib/utils/boardLayout';
 
 	let rolling = $state(false);
+	// After rolling, until the dice have landed: combinations stay hidden and the AI waits
+	let landing = $state(false);
 	let selectedCombo = $state<DiceCombination | null>(null);
 	let viewingPlayerIndex = $state(0);
 	let eliminatedNames = $state<string[]>([]);
@@ -33,7 +35,7 @@
 		if (!selectedCombo || !currentPlayer) return '';
 		const sc = currentPlayer.scorecard;
 		const d = calculateScore(applySelection(sc, selectedCombo)).totalScore - calculateScore(sc).totalScore;
-		return d > 0 ? `+${d}` : d < 0 ? `−${Math.abs(d)}` : '0';
+		return d > 0 ? `+${d}` : d < 0 ? `-${Math.abs(d)}` : '0';
 	});
 	let viewingPlayer = $derived(gameState.players[viewingPlayerIndex]);
 
@@ -82,7 +84,7 @@
 
 	// Auto-play AI
 	$effect(() => {
-		if (gameState.phase === 'SELECTING' && localGame.isCurrentPlayerAI()) {
+		if (gameState.phase === 'SELECTING' && localGame.isCurrentPlayerAI() && !rolling && !landing) {
 			const t1 = setTimeout(() => {
 				const combo = localGame.getAiSelection();
 				if (combo) selectedCombo = combo;
@@ -110,6 +112,7 @@
 	function doRoll() {
 		if (gameState.phase !== 'ROLLING' || rolling) return;
 		rolling = true;
+		landing = true;
 		selectedCombo = null;
 		playRollingSound(900);
 		tryVibrate(50);
@@ -118,6 +121,8 @@
 		// Keep rolling gameState for animation duration
 		setTimeout(() => {
 			rolling = false;
+			// The dice report landing (onsettled); this only covers a roll that never animated
+			setTimeout(() => { landing = false; }, 1500);
 		}, 1200);
 	}
 
@@ -172,7 +177,13 @@
 
 		{#if gameState.diceValues.length > 0}
 			<div class="center-block">
-				<DiceDisplay diceValues={gameState.diceValues} {rolling} {diceSize} selectedCombination={selectedCombo} />
+				<DiceDisplay
+					diceValues={gameState.diceValues}
+					{rolling}
+					{diceSize}
+					selectedCombination={selectedCombo}
+					onsettled={() => { landing = false; }}
+				/>
 			</div>
 		{/if}
 
@@ -183,11 +194,14 @@
 				scorecard={currentPlayer?.scorecard ?? { leftMarks: {}, rightMarks: {} }}
 				selectedCombination={selectedCombo}
 				onselect={localGame.isCurrentPlayerAI() ? undefined : selectCombo}
+				loading={rolling || landing}
 			/>
 			{#if !localGame.isCurrentPlayerAI()}
 				<div class="score-bar">
 					{#if selectedCombo}
 						<button class="btn btn-primary btn-block score-btn" onclick={scoreIt}>Score It <span class="move-points">{movePoints}</span></button>
+					{:else if rolling || landing}
+						<p class="score-hint">Rolling…</p>
 					{:else}
 						<p class="score-hint">Tap a combination to preview it on your scorecard</p>
 					{/if}

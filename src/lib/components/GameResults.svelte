@@ -1,8 +1,9 @@
 <script lang="ts">
 	/*
 	 * Game-over screen shared by local and online play: confetti, the winner card, the
-	 * final standings (tap a row to view that player's scorecard), and the page's own
-	 * actions (rematch, new game, leave…) underneath.
+	 * final standings side by side (tap a player to view their scorecard), and the page's
+	 * own actions (rematch, new game, leave…) underneath. The standings sit in one row so
+	 * the whole scorecard fits below them on a phone.
 	 */
 	import type { Snippet } from 'svelte';
 	import { onMount } from 'svelte';
@@ -52,19 +53,21 @@
 		</div>
 	{/if}
 
-	<div class="scores-list">
+	<div class="scores-list" style:--players={allScores.length}>
 		{#each allScores as { player, score }, i}
 			<button
 				class="score-row"
 				class:active={viewingPlayerId === player.id}
+				aria-pressed={viewingPlayerId === player.id}
 				data-player={player.color}
 				onclick={() => { viewingPlayerId = player.id; }}
 			>
-				<span class="rank">#{i + 1}</span>
-				<span class="player-dot"></span>
+				<span class="row-top">
+					<span class="rank">#{i + 1}</span>
+					<span class="player-dot"></span>
+					{#if player.isAI}<span class="badge">AI</span>{/if}
+				</span>
 				<span class="name">{player.name}</span>
-				{#if player.isAI}<span class="badge">AI</span>{/if}
-				{#if !player.isActive}<span class="badge badge-danger">Eliminated</span>{/if}
 				<span class="total" class:positive={score.totalScore > 0} class:negative={score.totalScore < 0}>
 					{score.totalScore}
 				</span>
@@ -136,46 +139,94 @@
 		font-weight: 600;
 	}
 
+	/* One card per player, side by side in finishing order */
 	.scores-list {
+		flex: none;
 		width: 100%;
-		max-width: 400px;
-		display: flex;
-		flex-direction: column;
+		max-width: 500px;
+		display: grid;
+		grid-template-columns: repeat(var(--players, 2), minmax(0, 1fr));
 		gap: var(--space-xs);
 	}
 
 	.score-row {
 		display: flex;
+		flex-direction: column;
 		align-items: center;
-		gap: var(--space-sm);
-		padding: var(--space-sm) 12px;
+		gap: 2px;
+		min-width: 0;
+		padding: var(--space-xs) var(--space-xs) 6px;
 		background: var(--card-bg);
 		border-radius: var(--radius-md);
 		border: 2px solid transparent;
-		text-align: left;
 	}
 
 	.score-row.active { border-color: var(--gold-amber); }
-	.rank { font-weight: 700; color: var(--text-muted); width: 24px; }
-	.name { flex: 1; font-weight: 600; }
-	.total { font-weight: 700; }
+
+	.row-top {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+		font-size: var(--font-size-xs);
+	}
+
+	.rank { font-weight: 700; color: var(--text-muted); }
+	.row-top .badge { font-size: 10px; padding: 0 4px; }
+
+	.name {
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+	}
+
+	.total {
+		font-family: var(--font-numeric);
+		font-size: var(--font-size-lg);
+		font-weight: 700;
+		line-height: 1.1;
+	}
+
 
 	.positive { color: var(--score-positive); }
 	.negative { color: var(--score-negative); }
 
+	/* Always its full height: the page scrolls if it must, never the scorecard */
 	.scorecard-viewer {
+		flex: none;
 		width: 100%;
 		max-width: 500px;
-		overflow: auto;
 	}
 
+	/*
+	 * Shorter screens: the winner card becomes a single line and the heading shrinks, so
+	 * the whole scorecard still fits below the standings
+	 */
+	@media (max-height: 760px) {
+		.gameover-page { gap: var(--space-sm); padding-block: var(--space-sm); }
+		h2 { font-size: var(--font-size-xl); }
+		.winner-card {
+			display: flex;
+			align-items: baseline;
+			gap: 12px;
+			padding: var(--space-xs) var(--space-lg);
+			border-width: 2px;
+		}
+		.winner-name { font-size: var(--font-size-lg); }
+		.winner-score { font-size: var(--font-size-xl); }
+	}
+
+	/* As wide as the scorecard, so a page can lay its actions out in a row */
 	.actions {
+		flex: none;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: var(--space-sm);
 		width: 100%;
-		max-width: 320px;
-		padding-top: var(--space-sm);
+		max-width: 500px;
+		padding-top: var(--space-xs);
 	}
 </style>

@@ -39,7 +39,7 @@
 			? calculateScore(applySelection(scorecard, combination)).totalScore - calculateScore(scorecard).totalScore
 			: 0
 	);
-	let impactText = $derived(impact > 0 ? `+${impact} pts` : impact < 0 ? `−${Math.abs(impact)} pts` : '0 pts');
+	let impactText = $derived(impact > 0 ? `+${impact} pts` : impact < 0 ? `-${Math.abs(impact)} pts` : '0 pts');
 
 	function handleClick() {
 		if (isValid) {

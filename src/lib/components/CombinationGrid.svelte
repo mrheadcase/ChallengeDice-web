@@ -10,6 +10,8 @@
 		scorecard: Scorecard;
 		selectedCombination?: DiceCombination | null;
 		onselect?: (combo: DiceCombination) => void;
+		/** While the dice are still rolling: placeholder cards instead of the combinations */
+		loading?: boolean;
 	}
 
 	let {
@@ -18,7 +20,11 @@
 		scorecard,
 		selectedCombination = null,
 		onselect,
+		loading = false,
 	}: Props = $props();
+
+	// Two rows' worth of placeholders on most screens
+	const PLACEHOLDERS = 6;
 
 	let prefs = $derived(preferences.current);
 
@@ -122,6 +128,7 @@
 	// The card count changes every roll without resizing the grid itself
 	$effect(() => {
 		sortedCombinations;
+		loading;
 		updateOverflow();
 	});
 
@@ -168,17 +175,26 @@
 	bind:this={gridEl}
 	onscroll={updateOverflow}
 >
-	{#each sortedCombinations as combo}
-		<CombinationCard
-			combination={combo}
-			{scorecard}
-			selected={isSelected(combo)}
-			size={prefs.comboSize}
-			{onselect}
-			oninvalidselect={showInvalidMessage}
-		/>
-	{/each}
+	{#if loading}
+		{#each { length: PLACEHOLDERS } as _, i}
+			<div class="placeholder" style:animation-delay="{i * 90}ms" aria-hidden="true"></div>
+		{/each}
+	{:else}
+		{#each sortedCombinations as combo}
+			<CombinationCard
+				combination={combo}
+				{scorecard}
+				selected={isSelected(combo)}
+				size={prefs.comboSize}
+				{onselect}
+				oninvalidselect={showInvalidMessage}
+			/>
+		{/each}
+	{/if}
 </div>
+{#if loading}
+	<span class="sr-only" role="status">Rolling…</span>
+{/if}
 </div>
 
 <style>
@@ -225,6 +241,25 @@
 			#000 calc(100% - var(--fade-bottom)),
 			transparent
 		);
+	}
+
+	/*
+	 * Stand-in cards while the dice roll: the cards' size, gently pulsing. A translucent tint
+	 * of the muted text colour, so they show on the page and on the desktop panel, in either theme.
+	 */
+	.placeholder {
+		border-radius: var(--radius-md);
+		background: color-mix(in srgb, var(--text-muted) 22%, transparent);
+		animation: placeholder-pulse 1.1s ease-in-out infinite;
+	}
+
+	@keyframes placeholder-pulse {
+		0%, 100% { opacity: 0.35; }
+		50% { opacity: 0.85; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.placeholder { animation: none; opacity: 0.5; }
 	}
 
 	/* Minimum column width per card-size preference — fits two two-digit chips plus the 5th-die chip */

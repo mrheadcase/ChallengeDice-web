@@ -143,7 +143,10 @@
 		padding: var(--space-md);
 	}
 
+	/* Raised above the board's other panels, which the dice can fly over on their way in */
 	.turn-panel {
+		position: relative;
+		z-index: 1;
 		display: flex;
 		flex-direction: column;
 		gap: var(--turn-gap);
@@ -163,6 +166,8 @@
 	 * Stacked (phones and tablets in portrait): the turn panel is exactly dice + N rows of
 	 * combinations (N fractional, for the peek) + the score bar. Anything that doesn't fit
 	 * scrolls inside the panel. The score bar stays at the bottom, just above the scorecard.
+	 * Not clipped: the combinations shrink to fit, and the tumbling dice (Dice3D) poke past
+	 * the panel's edges mid-throw.
 	 */
 	@media (max-width: 1023px) and (min-height: 501px) {
 		.turn-panel {
@@ -171,7 +176,6 @@
 				var(--combo-rows) * var(--combo-row) + (var(--combo-rows) - 1) * var(--space-sm) + 2 * var(--space-xs) +
 				var(--turn-gap) + var(--score-bar)
 			);
-			overflow: hidden;
 		}
 	}
 
@@ -239,7 +243,6 @@
 		.turn-panel {
 			grid-column: 1;
 			grid-row: 1;
-			overflow: hidden auto;
 			gap: var(--space-lg);
 			padding: var(--space-lg);
 			background: var(--card-bg);
@@ -284,9 +287,9 @@
 			gap: var(--space-sm);
 			padding: var(--space-sm) max(var(--space-sm), env(safe-area-inset-right)) var(--space-sm) max(var(--space-sm), env(safe-area-inset-left));
 		}
+		/* Not clipped, as when stacked: the combinations shrink to fit, and the dice tumble past its edges */
 		.turn-panel {
 			flex: 0 0 300px;
-			overflow: hidden auto;
 		}
 	}
 </style>

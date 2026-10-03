@@ -47,9 +47,9 @@
 		previewCombination ? calculateScore(applySelection(scorecard, previewCombination)).totalScore : null
 	);
 
-	// True minus sign (−); hyphens read as dashes
+	// Plain hyphen-minus: the true minus sign (U+2212) reads as long as a dash in this font
 	function formatScore(n: number): string {
-		return n < 0 ? `−${Math.abs(n)}` : String(n);
+		return n < 0 ? `-${Math.abs(n)}` : String(n);
 	}
 
 	function signClass(n: number): string {
@@ -125,30 +125,28 @@
 
 <div class="scorecard part-{part} text-{preferences.current.scorecardTextSize}" class:compact>
 	{#if part !== 'lanes'}
-	<!-- Totals — on the lanes' column grid: penalties over the pips, scored over the cells, total over pts -->
-	<div class="lane-grid totals" role="group" aria-label="Score">
-		<div class="stat stat-penalties">
+	<!-- Totals — three evenly spaced columns -->
+	<div class="totals" role="group" aria-label="Score">
+		<div class="stat">
 			<span class="stat-label">Penalties</span>
 			<span class="stat-value" class:negative={scoreResult.negativeTotal < 0}>{formatScore(scoreResult.negativeTotal)}</span>
 		</div>
-		<div class="totals-right">
-			<div class="stat">
-				<span class="stat-label">Scored</span>
-				<span class="stat-value" class:positive={scoreResult.positiveTotal > 0}>
-					{scoreResult.positiveTotal > 0 ? `+${scoreResult.positiveTotal}` : '0'}
-				</span>
-			</div>
-			<div class="stat stat-total">
-				<span class="stat-label">Total</span>
-				<span class="total-values">
-					<span class="stat-value {signClass(scoreResult.totalScore)}">{formatScore(scoreResult.totalScore)}</span>
-					{#if projectedTotal !== null}
-						<!-- Colour carries the sign here; the hidden text says it for screen readers -->
-						<span class="projected {signClass(projectedTotal)}" aria-hidden="true">→ {Math.abs(projectedTotal)}</span>
-						<span class="sr-only">after this move: {formatScore(projectedTotal)}</span>
-					{/if}
-				</span>
-			</div>
+		<div class="stat">
+			<span class="stat-label">Scored</span>
+			<span class="stat-value" class:positive={scoreResult.positiveTotal > 0}>
+				{scoreResult.positiveTotal > 0 ? `+${scoreResult.positiveTotal}` : '0'}
+			</span>
+		</div>
+		<div class="stat stat-total">
+			<span class="stat-label">Total</span>
+			<span class="total-values">
+				<span class="stat-value {signClass(scoreResult.totalScore)}">{formatScore(scoreResult.totalScore)}</span>
+				{#if projectedTotal !== null}
+					<!-- The arrow is visual only; the hidden text says it for screen readers -->
+					<span class="projected {signClass(projectedTotal)}" aria-hidden="true">→ {formatScore(projectedTotal)}</span>
+					<span class="sr-only">after this move: {formatScore(projectedTotal)}</span>
+				{/if}
+			</span>
 		</div>
 	</div>
 	{/if}
@@ -157,7 +155,7 @@
 	<div class="lanes" bind:this={lanesEl} style:--row-h={rowHeight === null ? null : `${rowHeight}px`}>
 		<div class="lane-grid lane-header" aria-hidden="true">
 			<span></span>
-			<span class="header-penalty">−10 each</span>
+			<span class="header-penalty">-10 each</span>
 			<span class="cells">
 				{#each SCORING_MULTIPLIERS as mult}
 					<span>×{mult}</span>
@@ -288,9 +286,13 @@
 		column-gap: var(--col-gap);
 	}
 
-	/* Totals */
+	/* Totals — penalties, scored and total in three equal columns */
 	.totals {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		align-items: end;
+		justify-items: center;
+		column-gap: var(--col-gap);
 		flex: none;
 	}
 
@@ -301,19 +303,6 @@
 		align-items: center;
 		gap: 2px;
 		padding: var(--space-xs) 0;
-	}
-
-	.stat-penalties {
-		grid-column: 1 / 3;
-	}
-
-	.totals-right {
-		grid-column: 3 / 5;
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-end;
-		gap: 12px;
-		padding-left: 2px;
 	}
 
 	.stat-label {
@@ -448,7 +437,7 @@
 		border-color: var(--sc-penalty);
 	}
 
-	/* Past the penalty zone: the −10 no longer applies */
+	/* Past the penalty zone: the -10 no longer applies */
 	.pip.cleared {
 		background: color-mix(in srgb, var(--text-muted) 30%, transparent);
 		border-color: transparent;
@@ -575,12 +564,23 @@
 		background: var(--sc-well);
 	}
 
-	/* One more mark fills it — red, so it reads differently from the orange combo preview below */
+	/*
+	 * One more mark fills it: a solid red ring with a red tint. The combo preview is a dashed
+	 * orange outline (like the previewed pips), so the two differ in style as well as colour —
+	 * on the light theme the deep orange and the red are too close in hue to rely on colour.
+	 */
 	.meter.almost-full {
-		box-shadow: inset 0 0 0 1.5px var(--score-negative);
-		background: color-mix(in srgb, var(--score-negative) 8%, var(--sc-well));
+		box-shadow: inset 0 0 0 2px var(--score-negative);
+		background: color-mix(in srgb, var(--score-negative) 12%, var(--sc-well));
 	}
-	.meter.previewing { box-shadow: inset 0 0 0 1.5px var(--combo-fifth); }
+	.meter.previewing {
+		outline: 2px dashed var(--combo-fifth);
+		outline-offset: -2px;
+	}
+	/* Previewing the move that fills a nearly full row: the red ring shows inside the dashes */
+	.meter.previewing.almost-full {
+		box-shadow: inset 0 0 0 4px var(--score-negative);
+	}
 	.meter.full { opacity: 0.5; }
 
 	.meter-boxes {
@@ -640,15 +640,6 @@
 	.part-summary {
 		gap: var(--space-md);
 	}
-	.part-summary .totals {
-		display: flex;
-		justify-content: space-between;
-		gap: var(--space-md);
-	}
-	.part-summary .totals-right {
-		flex: 1;
-		padding-left: 0;
-	}
 	.part-summary .fifth-meters {
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: var(--space-sm);
@@ -691,7 +682,8 @@
 			gap: 6px 12px;
 			padding: var(--space-sm) 10px;
 		}
-		.scorecard:not(.compact) .fifth { grid-column: 2; grid-row: 1 / 3; }
+		/* The column spans the sheet's full height; its header and meters sit centred in it */
+		.scorecard:not(.compact) .fifth { grid-column: 2; grid-row: 1 / 3; justify-content: center; }
 		.scorecard:not(.compact) .fifth-meters { grid-template-columns: 1fr; gap: var(--space-xs); }
 		.scorecard:not(.compact) .meter { flex-direction: row; gap: var(--space-sm); padding: var(--space-xs) 6px; }
 	}
@@ -712,5 +704,23 @@
 			padding: 16px 20px;
 		}
 		.scorecard:not(.compact) .meter-box { height: 10px; }
+	}
+
+	/*
+	 * Tablets in portrait (from the iPad mini's 744px up): the 5th-die row spans the full
+	 * width, so its dice, boxes and header grow to match instead of staying phone-sized.
+	 * The lanes above have height to spare for it.
+	 */
+	@media (min-width: 600px) and (max-width: 1023px) and (min-height: 501px) {
+		.part-full:not(.compact) .fifth { gap: var(--space-sm); }
+		.part-full:not(.compact) .fifth-title { font-size: var(--font-size-sm); }
+		.part-full:not(.compact) .fifth-count { font-size: var(--font-size-base); }
+		.part-full:not(.compact) .fifth-progress { height: 6px; border-radius: 3px; }
+		.part-full:not(.compact) .fifth-meters { gap: var(--space-sm); }
+		.part-full:not(.compact) .meter { gap: var(--space-sm); padding: 10px var(--space-sm); }
+		/* DiceView sizes its svg from a prop; the meters' dice are sized here instead */
+		.part-full:not(.compact) .meter :global(svg) { width: 32px; height: 32px; }
+		.part-full:not(.compact) .meter-boxes { gap: 3px; }
+		.part-full:not(.compact) .meter-box { height: 12px; border-radius: 3px; }
 	}
 </style>
