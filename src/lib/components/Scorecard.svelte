@@ -294,16 +294,17 @@
 		flex: none;
 	}
 
+	/* Each value is centred under its label */
 	.stat {
 		display: flex;
 		flex-direction: column;
+		align-items: center;
 		gap: 2px;
 		padding: var(--space-xs) 0;
 	}
 
 	.stat-penalties {
 		grid-column: 1 / 3;
-		align-items: flex-end;
 	}
 
 	.totals-right {
@@ -648,7 +649,6 @@
 		flex: 1;
 		padding-left: 0;
 	}
-	.part-summary .stat-penalties { align-items: flex-start; }
 	.part-summary .fifth-meters {
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: var(--space-sm);

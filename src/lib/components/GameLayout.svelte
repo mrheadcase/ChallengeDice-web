@@ -78,7 +78,8 @@
 		 * to it), and the pieces the stacked turn panel's height is built from
 		 */
 		--combo-row: 58px;
-		--combo-rows: 2;
+		/* Two full rows plus the top of a third, which peeks out when there are more to scroll to */
+		--combo-rows: 2.45;
 		--dice-block: 72px; /* 56px dice + DiceDisplay's caption line */
 		--score-bar: 44px;
 		--turn-gap: var(--space-sm);
@@ -160,7 +161,9 @@
 
 	/*
 	 * Stacked (phones and tablets in portrait): the turn panel is exactly dice + N rows of
-	 * combinations + the score bar. Anything that doesn't fit scrolls inside the panel.
+	 * combinations (N fractional, for the peek) + the score bar. Anything that doesn't fit
+	 * scrolls inside the panel. The score bar follows the last row of cards, so when a roll
+	 * has fewer cards any spare height sits below it rather than above.
 	 */
 	@media (max-width: 1023px) and (min-height: 501px) {
 		.turn-panel {

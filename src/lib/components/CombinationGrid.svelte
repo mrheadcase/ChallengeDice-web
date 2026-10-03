@@ -256,14 +256,6 @@
 		white-space: nowrap;
 	}
 
-	/*
-	 * Stacked layouts (phones and tablets in portrait): the wrapper fills its room even
-	 * when the grid doesn't, so the action bar stays in the same place every turn
-	 */
-	@media (max-width: 1023px) and (min-height: 501px) {
-		.combo-wrapper { flex: 1 1 auto; }
-	}
-
 	/* Landscape on phones: tighter gaps for the narrow turn column */
 	@media (orientation: landscape) and (max-height: 500px) {
 		.combo-grid { gap: var(--space-xs); }
