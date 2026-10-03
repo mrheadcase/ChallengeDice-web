@@ -21,7 +21,7 @@
 			<div class="icon">X</div>
 			<h3>{title}</h3>
 			<p>No valid combinations available.</p>
-			<button class="dismiss-btn" onclick={ondismiss}>OK</button>
+			<button class="btn btn-primary dismiss-btn" onclick={ondismiss}>OK</button>
 		</div>
 	</div>
 {/if}
@@ -30,7 +30,7 @@
 	.overlay {
 		position: fixed;
 		inset: 0;
-		background: rgba(0, 0, 0, 0.5);
+		background: var(--overlay-bg);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -40,20 +40,20 @@
 	.dialog {
 		background: var(--card-bg);
 		border-radius: var(--radius-xl);
-		padding: 24px 32px;
+		padding: var(--space-lg) var(--space-xl);
 		text-align: center;
 		max-width: 320px;
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+		box-shadow: var(--shadow-overlay);
 	}
 
 	.icon {
 		width: 48px;
 		height: 48px;
-		border-radius: 50%;
+		border-radius: var(--radius-full);
 		background: var(--score-negative);
-		color: white;
+		color: var(--text-on-color);
 		font-weight: 700;
-		font-size: 24px;
+		font-size: var(--font-size-xl);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -62,20 +62,17 @@
 
 	h3 {
 		color: var(--text-dark);
-		margin-bottom: 8px;
+		margin-bottom: var(--space-sm);
 	}
 
 	p {
 		color: var(--text-medium);
 		font-size: var(--font-size-sm);
-		margin-bottom: 16px;
+		margin-bottom: var(--space-md);
 	}
 
 	.dismiss-btn {
-		background: var(--gold-amber);
-		color: white;
-		padding: 10px 32px;
+		padding: 10px var(--space-xl);
 		border-radius: var(--radius-md);
-		font-weight: 600;
 	}
 </style>

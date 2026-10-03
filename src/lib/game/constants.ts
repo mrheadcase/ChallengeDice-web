@@ -1,6 +1,6 @@
 // Game constants — ported from GameModels.kt and Color.kt / PlayerColors.kt
 
-import type { ScorecardRowConfig, PlayerColor } from './models';
+import type { ScorecardRowConfig } from './models';
 
 export const SCORING_MULTIPLIERS = [1, 2, 3, 4, 7, 10] as const;
 
@@ -24,64 +24,7 @@ export const LEFT_SCORECARD_CONFIG_MAP: Record<number, ScorecardRowConfig> =
 export const RIGHT_SCORECARD_BOXES_PER_ROW = 4;
 export const RIGHT_SCORECARD_ROWS = [1, 2, 3, 4, 5, 6];
 
-// --- Theme colors ---
-
-export const THEME = {
-	cream: '#FAF6F0',
-	warmTan: '#F0E8D8',
-	deepBrown: '#1A0D04',
-	brown: '#2B1A0E',
-	goldAmber: '#C47A10',
-	lightGold: '#F0D590',
-	paleGold: '#F5E6C8',
-	midBrown: '#4A2C10',
-	darkBrown: '#3A1E08',
-	purple: '#6B3FA0',
-	lightPurple: '#D0BCFF',
-	textDark: '#2B1A0E',
-	textMedium: '#5A3D20',
-	textLight: '#F0E8D8',
-	textMuted: '#B8A888',
-	scorePositive: '#2E7D32',
-	scoreNegative: '#C62828',
-	statusActive: '#4CAF50',
-} as const;
-
-// --- Player color schemes ---
-
-export interface PlayerColorScheme {
-	primary: string;
-	light: string;
-	onPrimary: string;
-	dark: string;  // muted variant for scorecard rows
-}
-
-export const PLAYER_COLORS: Record<PlayerColor, PlayerColorScheme> = {
-	BLUE: {
-		primary: '#1565C0',
-		light: '#BBDEFB',
-		onPrimary: '#FFFFFF',
-		dark: '#0D47A1',
-	},
-	RED: {
-		primary: '#C62828',
-		light: '#FFCDD2',
-		onPrimary: '#FFFFFF',
-		dark: '#B71C1C',
-	},
-	GREEN: {
-		primary: '#2E7D32',
-		light: '#C8E6C9',
-		onPrimary: '#FFFFFF',
-		dark: '#1B5E20',
-	},
-	PURPLE: {
-		primary: '#6A1B9A',
-		light: '#E1BEE7',
-		onPrimary: '#FFFFFF',
-		dark: '#4A148C',
-	},
-};
+// UI colours (theme, players, scorecard) live in src/app.css as design tokens
 
 // --- AI bot names ---
 
@@ -92,21 +35,7 @@ export const AI_BOT_NAMES: Record<string, string[]> = {
 	EXPERT: ['Oracle', 'Grandmaster', 'Apex', 'Zenith', 'Cipher', 'Paragon'],
 };
 
-// --- Scorecard rendering colors ---
-
-export const SCORECARD_COLORS = {
-	marked: '#1565C0',
-	penalty: '#C62828',
-	scoringZone: '#E3F2FD',
-	filledRow: '#9E9E9E',
-	nearScoring: '#FFA726',
-	previewPair1: '#1565C0',
-	previewPair2: '#2E7D32',
-	previewFifth: '#E65100',
-	previewOpacity: 0.15,
-} as const;
-
-// --- Confetti colors ---
+// --- Confetti colors (drawn on a canvas, so they are needed in JS) ---
 
 export const CONFETTI_COLORS = [
 	'#F44336', '#2196F3', '#4CAF50', '#FFEB3B',

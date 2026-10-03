@@ -14,7 +14,8 @@ const config = {
 			fallback: '404.html'
 		}),
 		paths: {
-			base: '/ChallengeDice-web'
+			// GitHub Pages serves from /ChallengeDice-web; BASE_PATH='' builds for a domain root (dev.challengedice.com)
+			base: process.env.BASE_PATH ?? '/ChallengeDice-web'
 		},
 		prerender: {
 			handleHttpError: 'warn'

@@ -1,14 +1,11 @@
 <script lang="ts">
-	import { base } from '$app/paths';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 </script>
 
-<div class="about-page">
-	<header class="about-header">
-		<button class="back-btn" onclick={() => history.back()}>← Back</button>
-		<h2>About</h2>
-	</header>
+<div class="subpage">
+	<PageHeader title="About" onback={() => history.back()} />
 
-	<div class="about-content">
+	<div class="subpage-content">
 		<div class="app-info">
 			<h1 class="app-name">Challenge Dice</h1>
 			<p class="version">Web Version 0.1.0</p>
@@ -33,33 +30,9 @@
 </div>
 
 <style>
-	.about-page {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		overflow-y: auto;
-	}
-
-	.about-header {
-		display: flex;
-		align-items: center;
-		gap: 16px;
-		padding: 16px;
-	}
-
-	.back-btn { color: var(--gold-amber); font-weight: 600; padding: 8px; }
-	h2 { color: var(--text-dark); }
-
-	.about-content {
-		padding: 0 16px 32px;
-		max-width: 640px;
-		margin: 0 auto;
-		width: 100%;
-	}
-
 	.app-info {
 		text-align: center;
-		padding: 24px 0;
+		padding: var(--space-lg) 0;
 	}
 
 	.app-name {
@@ -73,16 +46,16 @@
 		font-size: var(--font-size-sm);
 	}
 
-	section { margin-bottom: 24px; }
+	section { margin-bottom: var(--space-lg); }
 
 	h3 {
 		color: var(--gold-amber);
-		margin-bottom: 8px;
+		margin-bottom: var(--space-sm);
 	}
 
 	p {
 		color: var(--text-medium);
 		line-height: 1.6;
-		margin-bottom: 8px;
+		margin-bottom: var(--space-sm);
 	}
 </style>

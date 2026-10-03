@@ -1,9 +1,9 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { page } from '$app/state';
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
 	import { onlineGame } from '$lib/stores/onlineGame.svelte';
-	import { PLAYER_COLORS } from '$lib/game/constants';
 	import * as FM from '$lib/firebase/gameManager';
 	import { copyToClipboard } from '$lib/utils/clipboard';
 
@@ -85,17 +85,14 @@
 </script>
 
 <div class="lobby-page">
-	<header class="lobby-header">
-		<button class="back-btn" onclick={leaveLobby}>← Leave</button>
-		<h2>Game Lobby</h2>
-	</header>
+	<PageHeader title="Game Lobby" backLabel="Leave" flush onback={leaveLobby} />
 
 	<!-- Game code -->
 	<div class="code-section">
 		<span class="code-label">Game Code</span>
 		<div class="code-display">
 			<span class="code">{lobbyCode || '...'}</span>
-			<button class="copy-btn" onclick={copyCode}>{copied ? 'Copied!' : 'Copy'}</button>
+			<button class="btn btn-primary btn-sm" onclick={copyCode}>{copied ? 'Copied!' : 'Copy'}</button>
 		</div>
 		<p class="code-hint">Share this code with friends to join</p>
 	</div>
@@ -104,12 +101,11 @@
 	<div class="players-section">
 		<h3>Players ({gameState.players.length}/4)</h3>
 		{#each gameState.players as player, i}
-			{@const colors = PLAYER_COLORS[player.color]}
-			<div class="player-row">
-				<span class="player-dot" style:background={colors.primary}></span>
+			<div class="player-row" data-player={player.color}>
+				<span class="player-dot"></span>
 				<span class="player-name">{player.name}</span>
 				{#if onlineGame.isPlayerHost(i)}
-					<span class="host-badge">Host</span>
+					<span class="badge badge-primary badge-pill">Host</span>
 				{/if}
 			</div>
 		{/each}
@@ -125,7 +121,7 @@
 	<div class="actions">
 		{#if onlineGame.isHost}
 			<button
-				class="action-btn primary"
+				class="btn btn-primary btn-lg btn-block start-btn"
 				onclick={startGameNow}
 				disabled={gameState.players.length < 2 || starting}
 			>
@@ -139,28 +135,20 @@
 
 <style>
 	.lobby-page {
-		display: flex; flex-direction: column; gap: 24px;
-		height: 100%; padding: 16px; overflow-y: auto;
+		display: flex; flex-direction: column; gap: var(--space-lg);
+		height: 100%; padding: var(--space-md); overflow-y: auto;
 	}
-
-	.lobby-header { display: flex; align-items: center; gap: 16px; }
-	.back-btn { color: var(--gold-amber); font-weight: 600; padding: 8px; }
-	h2 { color: var(--text-dark); }
 
 	.code-section { text-align: center; }
 	.code-label { font-size: var(--font-size-sm); color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; }
-	.code-display { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 8px 0; }
+	.code-display { display: flex; align-items: center; justify-content: center; gap: 12px; margin: var(--space-sm) 0; }
 	.code {
-		font-size: 2rem; font-weight: 800; letter-spacing: 6px;
+		font-size: var(--font-size-2xl); font-weight: 800; letter-spacing: 6px;
 		color: var(--gold-amber); font-family: monospace;
-	}
-	.copy-btn {
-		padding: 8px 16px; background: var(--btn-primary-bg); color: var(--btn-primary-text);
-		border-radius: var(--radius-md); font-weight: 600; font-size: var(--font-size-sm);
 	}
 	.code-hint { font-size: var(--font-size-sm); color: var(--text-muted); }
 
-	.players-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 16px; }
+	.players-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: var(--space-md); }
 	h3 { color: var(--text-dark); margin-bottom: 12px; }
 
 	.player-row {
@@ -170,23 +158,14 @@
 	.player-row:last-child { border-bottom: none; }
 	.player-row.empty { justify-content: center; }
 
-	.player-dot { width: 12px; height: 12px; border-radius: 50%; }
+	.player-dot { width: 12px; height: 12px; }
 	.player-name { font-weight: 600; flex: 1; }
-	.host-badge {
-		font-size: 10px; background: var(--btn-primary-bg); color: var(--btn-primary-text);
-		padding: 2px 8px; border-radius: 10px; font-weight: 700;
-	}
 	.waiting { color: var(--text-muted); font-style: italic; }
 
 	.actions { margin-top: auto; }
-	.action-btn {
-		padding: 16px; border-radius: var(--radius-lg); font-weight: 700;
-		font-size: var(--font-size-lg); width: 100%;
-	}
-	.action-btn.primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); }
-	.action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+	.start-btn { padding: var(--space-md); }
 
 	.waiting-msg {
-		text-align: center; color: var(--text-muted); font-style: italic; padding: 16px;
+		text-align: center; color: var(--text-muted); font-style: italic; padding: var(--space-md);
 	}
 </style>

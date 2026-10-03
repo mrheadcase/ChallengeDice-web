@@ -1,13 +1,17 @@
 <script lang="ts">
 	// Row of 5 dice with roll animation — ported from GameComponents.kt DiceDisplayRow
 	import DiceView from './DiceView.svelte';
+	import Dice3D from './Dice3D.svelte';
 	import type { DiceCombination } from '$lib/game/models';
+	import { MediaQuery } from 'svelte/reactivity';
 
 	interface Props {
 		diceValues: number[];
 		selectedCombination?: DiceCombination | null;
 		rolling?: boolean;
 		diceSize?: number;
+		/** Called once a roll's animation has finished and every die is at rest */
+		onsettled?: () => void;
 	}
 
 	let {
@@ -15,7 +19,43 @@
 		selectedCombination = null,
 		rolling = false,
 		diceSize = 56,
+		onsettled,
 	}: Props = $props();
+
+	// Real 3D cubes that tumble and land (Dice3D); the flat dice below when motion is reduced
+	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+	let use3d = $derived(!reducedMotion.current);
+
+	// The order the 3D dice are thrown in and land in, each shuffled every roll so neither
+	// always runs left to right
+	let throwOrder = $state([0, 1, 2, 3, 4]);
+	// Where the roll comes from, below the row: 0 straight up, ± from the lower left / right
+	let throwAngle = $state(0);
+	let landOrder = $state([0, 1, 2, 3, 4]);
+	let landed = 0;
+
+	function shuffledSlots(): number[] {
+		const slots = [0, 1, 2, 3, 4];
+		for (let i = slots.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[slots[i], slots[j]] = [slots[j], slots[i]];
+		}
+		return slots;
+	}
+
+	// The roll is over once all five 3D dice have landed
+	function dieLanded() {
+		landed++;
+		if (landed === 5) onsettled?.();
+	}
+
+	// The flat dice are at rest as soon as rolling ends
+	let wasRolling = false;
+	$effect(() => {
+		const r = rolling;
+		if (wasRolling && !r && !use3d) onsettled?.();
+		wasRolling = r;
+	});
 
 	// Temporary random values shown during rolling animation
 	let rollingValues = $state([1, 1, 1, 1, 1]);
@@ -25,21 +65,34 @@
 	let rollingInterval: ReturnType<typeof setInterval> | null = null;
 	let prevRolling = false;
 
-	const PAIR1_COLOR = '#1565C0'; // blue
-	const PAIR2_COLOR = '#2E7D32'; // green
-	const FIFTH_COLOR = '#E65100'; // orange
+	// Role each die plays in the selected combination; colours come from the .role-* classes
+	type DieRole = 'pair1' | 'pair2' | 'fifth';
 
-	function getDiceHighlights(values: number[], combo: DiceCombination | null | undefined): (string | null)[] {
+	// Caption for each group, anchored to the die that lands in the group's first slot
+	const GROUP_LABELS: Record<number, { role: DieRole; dice: number }> = {
+		0: { role: 'pair1', dice: 2 },
+		2: { role: 'pair2', dice: 2 },
+		4: { role: 'fifth', dice: 1 },
+	};
+
+	// Pairs are labelled with their sum — the scorecard row they mark, as on the combo chips
+	function groupText(role: DieRole): string {
+		if (role === 'pair1') return String(selectedCombination?.pair1Sum ?? '');
+		if (role === 'pair2') return String(selectedCombination?.pair2Sum ?? '');
+		return '5th';
+	}
+
+	function getDiceHighlights(values: number[], combo: DiceCombination | null | undefined): (DieRole | null)[] {
 		if (!combo) return values.map(() => null);
 
-		const colors: (string | null)[] = values.map(() => null);
+		const roles: (DieRole | null)[] = values.map(() => null);
 		const used: boolean[] = values.map(() => false);
 
 		// Match pair 1
 		for (const dieValue of [combo.pair1Dice[0], combo.pair1Dice[1]]) {
 			for (let i = 0; i < values.length; i++) {
 				if (!used[i] && values[i] === dieValue) {
-					colors[i] = PAIR1_COLOR;
+					roles[i] = 'pair1';
 					used[i] = true;
 					break;
 				}
@@ -49,7 +102,7 @@
 		for (const dieValue of [combo.pair2Dice[0], combo.pair2Dice[1]]) {
 			for (let i = 0; i < values.length; i++) {
 				if (!used[i] && values[i] === dieValue) {
-					colors[i] = PAIR2_COLOR;
+					roles[i] = 'pair2';
 					used[i] = true;
 					break;
 				}
@@ -58,21 +111,21 @@
 		// Match 5th die
 		for (let i = 0; i < values.length; i++) {
 			if (!used[i] && values[i] === combo.fifthDie) {
-				colors[i] = FIFTH_COLOR;
+				roles[i] = 'fifth';
 				used[i] = true;
 				break;
 			}
 		}
 
-		return colors;
+		return roles;
 	}
 
 	// Compute regrouped order: pair1 dice, pair2 dice, fifth die, then any unmatched
-	function getRegroupedOrder(highlights: (string | null)[]): number[] {
+	function getRegroupedOrder(highlights: (DieRole | null)[]): number[] {
 		const order: number[] = [];
-		highlights.forEach((c, i) => { if (c === PAIR1_COLOR) order.push(i); });
-		highlights.forEach((c, i) => { if (c === PAIR2_COLOR) order.push(i); });
-		highlights.forEach((c, i) => { if (c === FIFTH_COLOR) order.push(i); });
+		highlights.forEach((r, i) => { if (r === 'pair1') order.push(i); });
+		highlights.forEach((r, i) => { if (r === 'pair2') order.push(i); });
+		highlights.forEach((r, i) => { if (r === 'fifth') order.push(i); });
 		highlights.forEach((_, i) => { if (!order.includes(i)) order.push(i); });
 		return order;
 	}
@@ -81,7 +134,7 @@
 	let hasCombo = $derived(diceHighlights.some(c => c !== null));
 
 	// Map each original index to its target slot position
-	function getTargetSlots(highlights: (string | null)[]): number[] {
+	function getTargetSlots(highlights: (DieRole | null)[]): number[] {
 		const order = getRegroupedOrder(highlights);
 		const slots = Array(5).fill(0);
 		order.forEach((origIdx, slot) => { slots[origIdx] = slot; });
@@ -109,6 +162,11 @@
 
 	$effect.pre(() => {
 		if (rolling && !prevRolling) {
+			// Before the dice see the roll start, so their throw uses this roll's order
+			throwOrder = shuffledSlots();
+			throwAngle = (Math.random() * 2 - 1) * 55;
+			landOrder = shuffledSlots();
+			landed = 0;
 			// Immediately hide dice offscreen
 			settledCount = 0;
 			enteringDice = true;
@@ -170,42 +228,44 @@
 
 <div class="dice-row" class:rolling>
 	{#each Array(5) as _, i}
-		{@const highlight = diceHighlights[i]}
+		{@const role = diceHighlights[i]}
+		{@const groupLabel = hasCombo && role ? GROUP_LABELS[targetSlots[i]] : undefined}
+		<!-- Entrance stagger and regroup offset are computed per die, so they stay inline -->
 		<div
-			class="die-wrapper"
-			class:settled={!rolling || i < settledCount}
-			class:offscreen={enteringDice && i >= enteredCount}
-			class:entering={enteringDice && i < enteredCount}
-			style="animation-delay: {i * 80}ms; transform: translateX({getTranslateX(i)}px)"
+			class="die-wrapper {role ? `role-${role}` : ''}"
+			class:settled={use3d || !rolling || i < settledCount}
+			class:offscreen={!use3d && enteringDice && i >= enteredCount}
+			class:entering={!use3d && enteringDice && i < enteredCount}
+			style:animation-delay="{i * 80}ms"
+			style:transform="translateX({getTranslateX(i)}px)"
 		>
-			<DiceView
-				value={displayValue(i)}
-				size={diceSize}
-				rotationDegrees={rotation(i)}
-				borderColor={highlight ?? '#555555'}
-				backgroundColor={highlight ? `color-mix(in srgb, ${highlight} 15%, #FFFFFF)` : '#FFFFFF'}
-			/>
+			{#if use3d}
+				<Dice3D value={diceValues[i] ?? 1} size={diceSize} {rolling} throwSlot={throwOrder[i]} {throwAngle} landSlot={landOrder[i]} onlanded={dieLanded} />
+			{:else}
+				<DiceView value={displayValue(i)} size={diceSize} rotationDegrees={rotation(i)} />
+			{/if}
+			{#if groupLabel}
+				<span class="group-label" class:span-2={groupLabel.dice === 2}>{groupText(groupLabel.role)}</span>
+			{/if}
 		</div>
 	{/each}
 </div>
-{#if hasCombo}
-	<div class="dice-legend">
-		<span class="legend-item" style="color: {PAIR1_COLOR}">Pair 1</span>
-		<span class="legend-item" style="color: {PAIR2_COLOR}">Pair 2</span>
-		<span class="legend-item" style="color: {FIFTH_COLOR}">5th</span>
-	</div>
-{/if}
 
 <style>
+	/* Bottom padding always reserves the caption line so selecting a combo doesn't shift the layout */
 	.dice-row {
+		/* Above the combinations, which the dice fly over on their way in */
+		position: relative;
+		z-index: 2;
 		display: flex;
-		gap: 8px;
+		gap: var(--space-sm);
 		justify-content: center;
 		align-items: center;
-		padding: 8px;
+		padding-bottom: var(--space-md);
 	}
 
 	.die-wrapper {
+		position: relative;
 		transition: transform 400ms ease, opacity 300ms ease;
 	}
 
@@ -233,17 +293,39 @@
 		75% { transform: translateY(4px) rotate(5deg); }
 	}
 
-	.dice-legend {
-		display: flex;
-		justify-content: center;
-		gap: 16px;
-		font-size: var(--font-size-xs);
-		font-weight: 700;
+	/* Die colours for each role in the selected combination — same colours as the combo chips */
+	.role-pair1 { --role: var(--combo-pair1); }
+	.role-pair2 { --role: var(--combo-pair2); }
+	.role-fifth { --role: var(--combo-fifth); }
+
+	.die-wrapper[class*='role-'] {
+		--die-edge: var(--role);
+		--die-face: color-mix(in srgb, var(--role) 15%, var(--die-white));
 	}
 
-	.legend-item {
-		display: flex;
-		align-items: center;
-		gap: 4px;
+	/*
+	 * A pill spanning its group: one die, or two dice plus the gap between them. 14px tall
+	 * at 2px below the dice, so it fits the caption line the row reserves.
+	 */
+	.group-label {
+		position: absolute;
+		top: calc(100% + var(--space-2xs));
+		left: 0;
+		width: 100%;
+		height: 14px;
+		display: grid;
+		place-items: center;
+		border-radius: var(--radius-full);
+		background: color-mix(in srgb, var(--role) 18%, transparent);
+		color: var(--role);
+		font-family: var(--font-numeric);
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		line-height: 1;
+		white-space: nowrap;
+	}
+
+	.group-label.span-2 {
+		width: calc(200% + var(--space-sm));
 	}
 </style>

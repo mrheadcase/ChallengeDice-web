@@ -1,26 +1,17 @@
 <script lang="ts">
 	// SVG dice component — ported from DiceView.kt
+	// Colours come from --die-face / --die-edge / --die-pip (app.css), so callers tint a die with a class
 
 	interface Props {
 		value: number;
 		size?: number;
-		backgroundColor?: string;
-		dotColor?: string;
-		borderColor?: string;
 		rotationDegrees?: number;
-		highlighted?: boolean;
-		highlightColor?: string;
 	}
 
 	let {
 		value,
 		size = 56,
-		backgroundColor = '#FFFFFF',
-		dotColor = '#000000',
-		borderColor = '#555555',
 		rotationDegrees = 0,
-		highlighted = false,
-		highlightColor = 'transparent',
 	}: Props = $props();
 
 	const padding = 0.22;
@@ -47,35 +38,25 @@
 	}
 
 	let dots = $derived(getDotPositions(value));
-	let borderWidth = $derived(size * 0.03);
 </script>
 
+<!-- Rotation is set per frame while rolling, so it stays an inline transform -->
 <svg
 	width={size}
 	height={size}
 	viewBox="0 0 100 100"
-	style="transform: rotate({rotationDegrees}deg)"
+	style:transform={rotationDegrees ? `rotate(${rotationDegrees}deg)` : undefined}
 	role="img"
 	aria-label="Die showing {value}"
 >
-	<!-- Background -->
 	<rect
+		class="face"
 		x="1.5" y="1.5" width="97" height="97"
 		rx={cornerRadius * 100}
 		ry={cornerRadius * 100}
-		fill={highlighted ? highlightColor : backgroundColor}
-		stroke={borderColor}
-		stroke-width={borderWidth / size * 100}
 	/>
-
-	<!-- Dots -->
 	{#each dots as [cx, cy]}
-		<circle
-			cx={cx * 100}
-			cy={cy * 100}
-			r={dotRadius * 100}
-			fill={dotColor}
-		/>
+		<circle class="pip" cx={cx * 100} cy={cy * 100} r={dotRadius * 100} />
 	{/each}
 </svg>
 
@@ -84,5 +65,16 @@
 		display: block;
 		flex-shrink: 0;
 		transition: transform 300ms ease;
+	}
+
+	/* Edge is 3% of the die's size at any size (viewBox units) */
+	.face {
+		fill: var(--die-face);
+		stroke: var(--die-edge);
+		stroke-width: 3;
+	}
+
+	.pip {
+		fill: var(--die-pip);
 	}
 </style>

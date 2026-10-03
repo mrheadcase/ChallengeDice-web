@@ -1,20 +1,23 @@
 <script lang="ts">
 	import { base } from '$app/paths';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
 	import { localGame } from '$lib/stores/localGame.svelte';
+	import GameLayout from '$lib/components/GameLayout.svelte';
 	import DiceDisplay from '$lib/components/DiceDisplay.svelte';
 	import CombinationGrid from '$lib/components/CombinationGrid.svelte';
-	import Scorecard from '$lib/components/Scorecard.svelte';
+	import Scorecard, { type ScorecardPart } from '$lib/components/Scorecard.svelte';
 	import PlayerTabs from '$lib/components/PlayerTabs.svelte';
 	import EliminationDialog from '$lib/components/EliminationDialog.svelte';
 	import SettingsDialog from '$lib/components/SettingsDialog.svelte';
-	import PinchZoomContainer from '$lib/components/PinchZoomContainer.svelte';
 	import type { DiceCombination } from '$lib/game/models';
+	import { applySelection, calculateScore } from '$lib/game/logic';
 	import { preferences } from '$lib/stores/preferences.svelte';
 	import { playRollingSound, playShakingSound, tryVibrate } from '$lib/utils/sounds';
+	import { boardDiceSize } from '$lib/utils/boardLayout';
 
 	let rolling = $state(false);
+	// After rolling, until the dice have landed: combinations stay hidden and the AI waits
+	let landing = $state(false);
 	let selectedCombo = $state<DiceCombination | null>(null);
 	let viewingPlayerIndex = $state(0);
 	let eliminatedNames = $state<string[]>([]);
@@ -22,8 +25,18 @@
 	let autoRolledRound = $state(-1);
 	let showSettings = $state(false);
 
+	let diceSize = $derived(boardDiceSize());
+
 	let gameState = $derived(localGame.gameState);
 	let currentPlayer = $derived(gameState.players[gameState.currentPlayerIndex]);
+
+	// How much the selected combination changes the current player's total, signed for the button
+	let movePoints = $derived.by(() => {
+		if (!selectedCombo || !currentPlayer) return '';
+		const sc = currentPlayer.scorecard;
+		const d = calculateScore(applySelection(sc, selectedCombo)).totalScore - calculateScore(sc).totalScore;
+		return d > 0 ? `+${d}` : d < 0 ? `-${Math.abs(d)}` : '0';
+	});
 	let viewingPlayer = $derived(gameState.players[viewingPlayerIndex]);
 
 	// Track eliminations — use untrack to avoid read/write cycle on prevActiveIds
@@ -71,7 +84,7 @@
 
 	// Auto-play AI
 	$effect(() => {
-		if (gameState.phase === 'SELECTING' && localGame.isCurrentPlayerAI()) {
+		if (gameState.phase === 'SELECTING' && localGame.isCurrentPlayerAI() && !rolling && !landing) {
 			const t1 = setTimeout(() => {
 				const combo = localGame.getAiSelection();
 				if (combo) selectedCombo = combo;
@@ -99,6 +112,7 @@
 	function doRoll() {
 		if (gameState.phase !== 'ROLLING' || rolling) return;
 		rolling = true;
+		landing = true;
 		selectedCombo = null;
 		playRollingSound(900);
 		tryVibrate(50);
@@ -107,6 +121,8 @@
 		// Keep rolling gameState for animation duration
 		setTimeout(() => {
 			rolling = false;
+			// The dice report landing (onsettled); this only covers a roll that never animated
+			setTimeout(() => { landing = false; }, 1500);
 		}, 1200);
 	}
 
@@ -132,137 +148,89 @@
 	}
 </script>
 
-<div class="game-page">
-	<div class="top-bar">
-		<a href={`${base}/`} class="icon-btn">Menu</a>
-		<span class="round-label">Round {gameState.currentRound}</span>
-		<div class="top-bar-right">
-			<button class="icon-btn" onclick={() => { showSettings = true; }}>Settings</button>
-			<a href={`${base}/rules`} class="icon-btn">Rules</a>
-		</div>
-	</div>
+<GameLayout
+	round={gameState.currentRound}
+	leading={{ label: 'Menu', href: `${base}/` }}
+	onsettings={() => { showSettings = true; }}
+>
+	{#snippet tabs()}
+		<PlayerTabs
+			players={gameState.players}
+			activeIndex={viewingPlayerIndex}
+			onselect={(i) => { viewingPlayerIndex = i; }}
+		/>
+	{/snippet}
 
-	<PlayerTabs
-		players={gameState.players}
-		activeIndex={viewingPlayerIndex}
-		onselect={(i) => { viewingPlayerIndex = i; }}
-	/>
+	{#snippet turn()}
+		{#if gameState.phase === 'ROLLING'}
+			<div class="center-block">
+				{#if preferences.current.autoRollEnabled}
+					<p class="status-text">{currentPlayer?.name} — rolling...</p>
+				{:else}
+					<p class="status-text">{currentPlayer?.name}'s turn to roll</p>
+					<button class="btn btn-primary btn-lg roll-btn" onclick={doRoll} disabled={rolling}>
+						{rolling ? 'Rolling...' : 'Roll Dice'}
+					</button>
+				{/if}
+			</div>
+		{/if}
 
-	<div class="game-content">
-		<div class="dice-section">
-			{#if gameState.phase === 'ROLLING'}
-				<div class="center-block">
-					{#if preferences.current.autoRollEnabled}
-						<p class="status-text">{currentPlayer?.name} — rolling...</p>
+		{#if gameState.diceValues.length > 0}
+			<div class="center-block">
+				<DiceDisplay
+					diceValues={gameState.diceValues}
+					{rolling}
+					{diceSize}
+					selectedCombination={selectedCombo}
+					onsettled={() => { landing = false; }}
+				/>
+			</div>
+		{/if}
+
+		{#if gameState.phase === 'SELECTING'}
+			<CombinationGrid
+				combinations={gameState.combinations}
+				validCombinations={gameState.validCombinations}
+				scorecard={currentPlayer?.scorecard ?? { leftMarks: {}, rightMarks: {} }}
+				selectedCombination={selectedCombo}
+				onselect={localGame.isCurrentPlayerAI() ? undefined : selectCombo}
+				loading={rolling || landing}
+			/>
+			{#if !localGame.isCurrentPlayerAI()}
+				<div class="score-bar">
+					{#if selectedCombo}
+						<button class="btn btn-primary btn-block score-btn" onclick={scoreIt}>Score It <span class="move-points">{movePoints}</span></button>
+					{:else if rolling || landing}
+						<p class="score-hint">Rolling…</p>
 					{:else}
-						<p class="status-text">{currentPlayer?.name}'s turn to roll</p>
-						<button class="roll-btn" onclick={doRoll} disabled={rolling}>
-							{rolling ? 'Rolling...' : 'Roll Dice'}
-						</button>
+						<p class="score-hint">Tap a combination to preview it on your scorecard</p>
 					{/if}
 				</div>
 			{/if}
+		{/if}
+	{/snippet}
 
-			{#if gameState.diceValues.length > 0}
-				<div class="center-block">
-					<DiceDisplay diceValues={gameState.diceValues} {rolling} selectedCombination={selectedCombo} />
-				</div>
-			{/if}
+	{#snippet scorecard(part: ScorecardPart)}
+		{#if viewingPlayer}
+			<Scorecard
+				scorecard={viewingPlayer.scorecard}
+				previewCombination={viewingPlayerIndex === gameState.currentPlayerIndex ? selectedCombo : null}
+				{part}
+			/>
+		{/if}
+	{/snippet}
+</GameLayout>
 
-			{#if gameState.phase === 'SELECTING'}
-				<CombinationGrid
-					combinations={gameState.combinations}
-					validCombinations={gameState.validCombinations}
-					scorecard={currentPlayer?.scorecard ?? { leftMarks: {}, rightMarks: {} }}
-					selectedCombination={selectedCombo}
-					onselect={localGame.isCurrentPlayerAI() ? undefined : selectCombo}
-				/>
-				{#if !localGame.isCurrentPlayerAI()}
-					<div class="score-bar">
-						<button class="score-btn" onclick={scoreIt} disabled={!selectedCombo}>
-							{selectedCombo ? 'Score It' : 'Select a combination'}
-						</button>
-					</div>
-				{/if}
-			{/if}
-		</div>
+<EliminationDialog
+	playerNames={eliminatedNames}
+	visible={eliminatedNames.length > 0}
+	ondismiss={dismissElimination}
+/>
 
-		<div class="scorecard-section">
-			<PinchZoomContainer>
-				{#if viewingPlayer}
-					<Scorecard
-						scorecard={viewingPlayer.scorecard}
-						playerColor={viewingPlayer.color}
-						previewCombination={viewingPlayerIndex === gameState.currentPlayerIndex ? selectedCombo : null}
-					/>
-				{/if}
-			</PinchZoomContainer>
-		</div>
-	</div>
+<SettingsDialog visible={showSettings} onclose={() => { showSettings = false; }} />
 
-	<EliminationDialog
-		playerNames={eliminatedNames}
-		visible={eliminatedNames.length > 0}
-		ondismiss={dismissElimination}
-	/>
-
-	<SettingsDialog visible={showSettings} onclose={() => { showSettings = false; }} />
-</div>
-
+<!-- Board layout lives in GameLayout; these style only this page's turn panel content -->
 <style>
-	.game-page {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		overflow: hidden;
-	}
-
-	.top-bar {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 8px 16px;
-		background: #1A0D04;
-		color: #F0E8D8;
-	}
-
-	.top-bar-right {
-		display: flex;
-		gap: 4px;
-		align-items: center;
-	}
-
-	.icon-btn {
-		color: var(--light-gold);
-		font-weight: 600;
-		font-size: var(--font-size-sm);
-		padding: 6px 12px;
-		border-radius: var(--radius-md);
-		text-decoration: none;
-		min-height: auto;
-	}
-	.icon-btn:hover { background: rgba(255,255,255,0.1); }
-
-	.round-label {
-		font-weight: 700;
-		color: inherit;
-	}
-
-	.game-content {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-	}
-
-	.dice-section {
-		padding: 8px;
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-		flex-shrink: 0;
-	}
-
 	.center-block {
 		text-align: center;
 		align-self: center;
@@ -272,82 +240,50 @@
 		font-weight: 600;
 		color: var(--text-medium);
 		font-size: var(--font-size-sm);
-		margin-bottom: 8px;
+		line-height: var(--line-height-sm);
+		margin-bottom: var(--space-sm);
 	}
 
-	.roll-btn {
-		background: var(--gold-amber);
-		color: white;
-		padding: 14px 40px;
-		border-radius: var(--radius-lg);
-		font-weight: 700;
-		font-size: var(--font-size-lg);
-		box-shadow: 0 4px 12px rgba(196, 122, 16, 0.3);
-	}
-	.roll-btn:hover:not(:disabled) { background: var(--mid-brown); }
-	.roll-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-
+	/* Fixed height (GameLayout's --score-bar) so swapping the hint for the button doesn't shift the layout */
 	.score-bar {
 		flex-shrink: 0;
-		padding: 8px 16px;
+		min-height: var(--score-bar, 44px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.score-hint {
+		color: var(--text-medium);
+		font-size: var(--font-size-sm);
+		line-height: var(--line-height-sm);
 		text-align: center;
 	}
 
-	.score-btn {
-		background: var(--btn-primary-bg);
-		color: var(--btn-primary-text);
-		padding: 10px 24px;
+	.move-points {
+		font-family: var(--font-numeric);
+		padding: 1px var(--space-sm);
 		border-radius: var(--radius-md);
-		font-weight: 700;
-		font-size: var(--font-size-base);
-		box-shadow: 0 2px 8px rgba(196, 122, 16, 0.3);
-		width: 100%;
-		max-width: 320px;
-	}
-	.score-btn:hover:not(:disabled) { background: var(--mid-brown); }
-	.score-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-	.scorecard-section {
-		flex: 1;
-		overflow: auto;
-		padding: 8px;
-		min-height: 0;
+		background: rgba(0, 0, 0, 0.14);
 	}
 
-	@media (min-width: 1024px) {
-		.game-content {
-			flex-direction: row;
-		}
-		.dice-section {
-			flex: 1 1 50%;
-		}
-		.scorecard-section {
-			flex: 1 1 50%;
+	.score-btn {
+		padding: 10px var(--space-lg);
+		border-radius: var(--radius-md);
+	}
+
+	/* Portrait phones: smaller hint text */
+	@media (max-width: 767px) and (orientation: portrait) {
+		.score-hint {
+			font-size: var(--font-size-xs);
+			line-height: var(--line-height-xs);
 		}
 	}
 
-	/* Landscape on phones — switch to side-by-side to fit the short viewport height */
+	/* Landscape phones: compact controls for the short height */
 	@media (orientation: landscape) and (max-height: 500px) {
-		.top-bar { padding: 4px 12px; }
-		.round-label { font-size: var(--font-size-sm); }
-		.icon-btn { padding: 4px 8px; }
-
-		.game-content { flex-direction: row; }
-		.dice-section {
-			flex: 0 0 50%;
-			padding: 4px;
-			gap: 4px;
-			overflow-y: auto;
-			min-height: 0;
-		}
-		.scorecard-section {
-			flex: 0 0 50%;
-			padding: 4px;
-		}
-
-		.status-text { margin-bottom: 4px; }
-		.roll-btn { padding: 8px 24px; font-size: var(--font-size-base); }
-		.score-bar { padding: 4px 8px; }
-		.score-btn { padding: 8px 16px; }
+		.status-text { margin-bottom: var(--space-xs); }
+		.roll-btn { padding: var(--space-sm) var(--space-lg); font-size: var(--font-size-base); }
+		.score-btn { padding: var(--space-sm) var(--space-md); }
 	}
 </style>

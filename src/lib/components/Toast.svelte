@@ -34,7 +34,7 @@
 		z-index: 2000;
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: var(--space-sm);
 		pointer-events: none;
 	}
 
@@ -43,13 +43,13 @@
 		border-radius: var(--radius-md);
 		font-weight: 500;
 		font-size: var(--font-size-sm);
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+		box-shadow: var(--shadow-raised);
 		animation: slideIn 300ms ease;
 	}
 
 	.toast-info { background: var(--brown); color: var(--text-light); }
-	.toast-error { background: var(--score-negative); color: white; }
-	.toast-success { background: var(--score-positive); color: white; }
+	.toast-error { background: var(--score-negative); color: var(--text-on-color); }
+	.toast-success { background: var(--score-positive); color: var(--text-on-color); }
 
 	@keyframes slideIn {
 		from { opacity: 0; transform: translateY(-10px); }

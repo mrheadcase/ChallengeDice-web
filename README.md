@@ -166,7 +166,7 @@ Firebase App Check is enabled with reCAPTCHA v3 to ensure only the registered we
 
 **Important:** The `base` path in `svelte.config.js` is set to `/ChallengeDice-web`. If you use a different repo name, update this value.
 
-**Note:** The deploy workflow uses Node.js 20, which GitHub is deprecating. Actions will be forced to Node.js 24 starting June 2, 2026, and Node.js 20 will be removed September 16, 2026. Update the workflow's `actions/checkout`, `actions/setup-node`, `actions/upload-pages-artifact`, and `actions/deploy-pages` to versions that support Node.js 24 before then.
+**Note:** The workflow builds with Node.js 24 and uses the Node 24 versions of `actions/checkout` (v7), `actions/setup-node` (v7), `actions/upload-pages-artifact` (v5), and `actions/deploy-pages` (v5).
 
 ## Game Logic Parity
 
