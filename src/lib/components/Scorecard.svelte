@@ -724,4 +724,22 @@
 		}
 		.scorecard:not(.compact) .meter-box { height: 10px; }
 	}
+
+	/*
+	 * Tablets in portrait (from the iPad mini's 744px up): the 5th-die row spans the full
+	 * width, so its dice, boxes and header grow to match instead of staying phone-sized.
+	 * The lanes above have height to spare for it.
+	 */
+	@media (min-width: 600px) and (max-width: 1023px) and (min-height: 501px) {
+		.part-full:not(.compact) .fifth { gap: var(--space-sm); }
+		.part-full:not(.compact) .fifth-title { font-size: var(--font-size-sm); }
+		.part-full:not(.compact) .fifth-count { font-size: var(--font-size-base); }
+		.part-full:not(.compact) .fifth-progress { height: 6px; border-radius: 3px; }
+		.part-full:not(.compact) .fifth-meters { gap: var(--space-sm); }
+		.part-full:not(.compact) .meter { gap: var(--space-sm); padding: 10px var(--space-sm); }
+		/* DiceView sizes its svg from a prop; the meters' dice are sized here instead */
+		.part-full:not(.compact) .meter :global(svg) { width: 32px; height: 32px; }
+		.part-full:not(.compact) .meter-boxes { gap: 3px; }
+		.part-full:not(.compact) .meter-box { height: 12px; border-radius: 3px; }
+	}
 </style>
