@@ -3,7 +3,6 @@
 	import DiceView from './DiceView.svelte';
 	import Dice3D from './Dice3D.svelte';
 	import type { DiceCombination } from '$lib/game/models';
-	import { isWideBoard } from '$lib/utils/boardLayout';
 	import { MediaQuery } from 'svelte/reactivity';
 
 	interface Props {
@@ -20,9 +19,9 @@
 		diceSize = 56,
 	}: Props = $props();
 
-	// Desktop board: real 3D cubes that tumble and land (Dice3D); elsewhere the flat dice below
+	// Real 3D cubes that tumble and land (Dice3D); the flat dice below when motion is reduced
 	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
-	let use3d = $derived(isWideBoard() && !reducedMotion.current);
+	let use3d = $derived(!reducedMotion.current);
 
 	// Temporary random values shown during rolling animation
 	let rollingValues = $state([1, 1, 1, 1, 1]);

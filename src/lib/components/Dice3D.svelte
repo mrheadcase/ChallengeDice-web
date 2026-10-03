@@ -1,6 +1,6 @@
 <script lang="ts">
 	/*
-	 * A die as a CSS 3D cube (desktop board only — DiceDisplay picks it). While rolling it's
+	 * A die as a CSS 3D cube (DiceDisplay uses it unless motion is reduced). While rolling it's
 	 * thrown in from the left and tumbles with real faces; once rolling ends it turns onto
 	 * the face for `value`, a little more spin and a last hop easing it to rest. The value
 	 * isn't needed until then: online games only learn it when the roll comes back.
@@ -54,13 +54,22 @@
 
 	function render() {
 		if (!moverEl || !cubeEl || !shadowEl) return;
-		// Higher off the board reads as nearer: lifted and a little larger, with a softer, smaller shadow
-		moverEl.style.transform = `translate3d(${pose.x}px, ${-pose.h * 0.5}px, 0) scale(${1 + pose.h / 260})`;
+		// Seen from above, higher off the board reads as nearer: a little larger (never moved up,
+		// which the turn panel would clip), with a softer, smaller shadow. Lift is 0–1 at any die size.
+		const lift = Math.min(pose.h / (46 * (size / 68)), 1);
+		moverEl.style.transform = `translate3d(${pose.x}px, 0, 0) scale(${1 + lift * 0.14})`;
 		cubeEl.style.transform =
 			`translateZ(${-size / 2}px) rotateZ(${pose.rz}deg) rotateX(${pose.rx}deg) rotateY(${pose.ry}deg)`;
-		const lift = Math.min(pose.h / 60, 1);
 		shadowEl.style.transform = `translateX(${pose.x}px) scale(${1 - lift * 0.35})`;
 		shadowEl.style.opacity = String(0.5 - lift * 0.3);
+	}
+
+	/*
+	 * At rest only the top face can show, so the core is hidden: seen edge-on its planes can
+	 * otherwise draw as hairlines across the face
+	 */
+	function setResting(resting: boolean) {
+		cubeEl?.classList.toggle('resting', resting);
 	}
 
 	function rest(v: number) {
@@ -68,6 +77,7 @@
 		const [rx, ry] = FACE_UP[v] ?? FACE_UP[1];
 		Object.assign(pose, { rx, ry, rz: 0, x: 0, h: 0 });
 		render();
+		setResting(true);
 	}
 
 	const rand = (min: number, max: number) => min + Math.random() * (max - min);
@@ -79,8 +89,11 @@
 
 	function tumble() {
 		cancelAnimationFrame(frame);
+		setResting(false);
 		spin = { x: sign() * rand(620, 900), y: sign() * rand(520, 820), z: sign() * rand(90, 260) };
-		const startX = -(160 + index * 26);
+		// Throw distance and bounce height scale with the die, so small phone dice stay in their row
+		const k = size / 68;
+		const startX = -(160 + index * 26) * k;
 		const delay = index * STAGGER_MS;
 		let start = 0;
 		let last = 0;
@@ -97,11 +110,11 @@
 				const p = t / THROW_MS;
 				pose.x = startX * (1 - easeOut(p));
 				// Thrown in high, then two shrinking bounces
-				pose.h = 46 * Math.exp(-3.2 * p) * Math.abs(Math.cos(p * Math.PI * 2.5));
+				pose.h = 46 * k * Math.exp(-3.2 * p) * Math.abs(Math.cos(p * Math.PI * 2.5));
 			} else {
 				pose.x = 0;
 				// Rattling on the board until the result is in
-				pose.h = 3 * Math.abs(Math.sin((t - THROW_MS) / 70));
+				pose.h = 3 * k * Math.abs(Math.sin((t - THROW_MS) / 70));
 			}
 			render();
 			frame = requestAnimationFrame(step);
@@ -139,7 +152,7 @@
 			pose.rz = from.rz + (to.rz - from.rz) * e;
 			pose.x = from.x * (1 - e);
 			// One last small hop, then down
-			pose.h = from.h * (1 - e) + (p < 0.55 ? 10 * Math.sin((p / 0.55) * Math.PI) : 0);
+			pose.h = from.h * (1 - e) + (p < 0.55 ? 10 * (size / 68) * Math.sin((p / 0.55) * Math.PI) : 0);
 			render();
 			if (p < 1) frame = requestAnimationFrame(step);
 			else {
@@ -148,6 +161,7 @@
 				pose.ry = by;
 				pose.rz = ((to.rz % 360) + 360) % 360;
 				render();
+				setResting(true);
 			}
 		};
 		frame = requestAnimationFrame(step);
@@ -208,6 +222,10 @@
 
 	.face {
 		backface-visibility: hidden;
+	}
+
+	.cube:global(.resting) .core {
+		visibility: hidden;
 	}
 
 	.core {
