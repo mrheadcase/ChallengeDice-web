@@ -702,7 +702,8 @@
 			gap: 6px 12px;
 			padding: var(--space-sm) 10px;
 		}
-		.scorecard:not(.compact) .fifth { grid-column: 2; grid-row: 1 / 3; }
+		/* The column spans the sheet's full height; its header and meters sit centred in it */
+		.scorecard:not(.compact) .fifth { grid-column: 2; grid-row: 1 / 3; justify-content: center; }
 		.scorecard:not(.compact) .fifth-meters { grid-template-columns: 1fr; gap: var(--space-xs); }
 		.scorecard:not(.compact) .meter { flex-direction: row; gap: var(--space-sm); padding: var(--space-xs) 6px; }
 	}
