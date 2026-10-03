@@ -183,13 +183,14 @@
 
 <style>
 	/*
-	 * Every game layout gives the turn panel a fixed height: the wrapper takes the room
-	 * between the dice and the action bar, and the grid shrinks to it and scrolls
+	 * Every game layout gives the turn panel a fixed height: the wrapper takes all the room
+	 * between the dice and the action bar, so the bar stays in the same place every turn,
+	 * and the grid shrinks to it and scrolls
 	 */
 	.combo-wrapper {
 		position: relative;
 		width: 100%;
-		flex: 0 1 auto;
+		flex: 1 1 auto;
 		min-height: 0;
 		display: flex;
 		flex-direction: column;

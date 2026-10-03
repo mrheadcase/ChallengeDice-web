@@ -162,8 +162,7 @@
 	/*
 	 * Stacked (phones and tablets in portrait): the turn panel is exactly dice + N rows of
 	 * combinations (N fractional, for the peek) + the score bar. Anything that doesn't fit
-	 * scrolls inside the panel. The score bar follows the last row of cards, so when a roll
-	 * has fewer cards any spare height sits below it rather than above.
+	 * scrolls inside the panel. The score bar stays at the bottom, just above the scorecard.
 	 */
 	@media (max-width: 1023px) and (min-height: 501px) {
 		.turn-panel {
@@ -227,7 +226,7 @@
 		}
 		/*
 		 * Left column: the turn panel takes the height the summary card (totals + 5th die)
-		 * leaves; right column: the lanes, full height
+		 * leaves, with the score bar pinned to its bottom; right column: the lanes, full height
 		 */
 		.board {
 			display: grid;
@@ -247,12 +246,6 @@
 			border-radius: var(--radius-lg);
 			box-shadow: var(--shadow-card);
 		}
-		/*
-		 * Centred with auto margins rather than justify-content, which would clip the top
-		 * of the dice (unscrollably) if the content ever outgrows the panel
-		 */
-		.turn-panel > :global(:first-child) { margin-top: auto; }
-		.turn-panel > :global(:last-child) { margin-bottom: auto; }
 		.summary-panel {
 			grid-column: 1;
 			grid-row: 2;
