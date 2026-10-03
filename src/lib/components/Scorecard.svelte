@@ -583,6 +583,25 @@
 	.meter.previewing { box-shadow: inset 0 0 0 1.5px var(--combo-fifth); }
 	.meter.full { opacity: 0.5; }
 
+	/*
+	 * Light theme: the deep orange and the red are too close in hue to tell apart as thin
+	 * rings, so they differ in style too — the preview is dashed (like the previewed pips),
+	 * the warning a heavier solid red with a stronger tint
+	 */
+	:global(:root:not(.theme-dark)) .meter.almost-full {
+		box-shadow: inset 0 0 0 2px var(--score-negative);
+		background: color-mix(in srgb, var(--score-negative) 12%, var(--sc-well));
+	}
+	:global(:root:not(.theme-dark)) .meter.previewing {
+		box-shadow: none;
+		outline: 2px dashed var(--combo-fifth);
+		outline-offset: -2px;
+	}
+	/* Previewing the move that fills a nearly full row: keep the red ring inside the dashes */
+	:global(:root:not(.theme-dark)) .meter.previewing.almost-full {
+		box-shadow: inset 0 0 0 4px var(--score-negative);
+	}
+
 	.meter-boxes {
 		display: flex;
 		gap: 2px;
