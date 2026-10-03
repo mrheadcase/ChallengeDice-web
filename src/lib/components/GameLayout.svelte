@@ -150,12 +150,12 @@
 		min-width: 0;
 	}
 
-	/* Scrolls only if the sheet can't fit at its minimum row height */
+	/* Never scrolls: the sheet's lanes shrink to fit whatever height is left (Scorecard.svelte) */
 	.scorecard-section {
 		flex: 1;
 		min-height: 0;
 		min-width: 0;
-		overflow-y: auto;
+		overflow: hidden;
 	}
 
 	/*
@@ -182,11 +182,15 @@
 		}
 	}
 
-	/* Short portrait phones: smaller dice and one visible row of combinations (the rest scroll) */
+	/*
+	 * Short portrait phones: smaller dice and one visible row of combinations, plus the
+	 * top of the next row so it's clear the rest scroll (CombinationGrid keeps the peek).
+	 * The scorecard's lanes shrink to make room.
+	 */
 	@media (max-width: 767px) and (orientation: portrait) and (max-height: 740px) {
 		.game-page {
 			--dice-block: 64px;
-			--combo-rows: 1;
+			--combo-rows: 1.45;
 			--score-bar: 40px;
 		}
 	}
@@ -234,13 +238,18 @@
 			grid-column: 1;
 			grid-row: 1;
 			overflow: hidden auto;
-			justify-content: center;
 			gap: var(--space-lg);
 			padding: var(--space-lg);
 			background: var(--card-bg);
 			border-radius: var(--radius-lg);
 			box-shadow: var(--shadow-card);
 		}
+		/*
+		 * Centred with auto margins rather than justify-content, which would clip the top
+		 * of the dice (unscrollably) if the content ever outgrows the panel
+		 */
+		.turn-panel > :global(:first-child) { margin-top: auto; }
+		.turn-panel > :global(:last-child) { margin-bottom: auto; }
 		.summary-panel {
 			grid-column: 1;
 			grid-row: 2;
@@ -253,6 +262,16 @@
 		.turn-panel :global(.combo-card:not(.selected):not(.invalid)) {
 			background: var(--cream);
 		}
+	}
+
+	/*
+	 * Short desktop-width screens (e.g. iPad in landscape, with Safari's toolbars): tighter
+	 * spacing so three rows of combinations fit beside the dice without the panel scrolling.
+	 * The summary card's 5th-die meters go to a single row (Scorecard.svelte) for the same reason.
+	 */
+	@media (min-width: 1024px) and (min-height: 501px) and (max-height: 860px) {
+		.board { gap: var(--space-sm); padding: var(--space-sm) var(--space-xl); }
+		.turn-panel { gap: var(--space-md); padding: var(--space-md); }
 	}
 
 	/*

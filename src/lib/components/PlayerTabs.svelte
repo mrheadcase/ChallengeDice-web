@@ -116,7 +116,7 @@
 	/* Landscape on phones — compact tabs to save vertical space */
 	@media (orientation: landscape) and (max-height: 500px) {
 		.player-tabs { padding: var(--space-xs) var(--space-sm) 0; gap: var(--space-xs); }
-		.player-tab { padding: 3px var(--space-sm); gap: var(--space-xs); }
+		.player-tab { min-height: 36px; padding: 3px var(--space-sm); gap: var(--space-xs); }
 		.player-name, .player-score { font-size: var(--font-size-xs); }
 	}
 </style>
