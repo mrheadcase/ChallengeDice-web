@@ -167,6 +167,14 @@
 		background: var(--chrome-hover);
 	}
 
+	/*
+	 * Tablets in portrait: the poster is wide enough that cover would crop well into the
+	 * title, so it scales down whole instead, with the blurred backdrop filling the sides
+	 */
+	@media (min-width: 600px) and (max-aspect-ratio: 1/1) {
+		.poster { object-fit: contain; }
+	}
+
 	/* Wide screens and landscape: full-height poster with the menu beside it */
 	@media (min-aspect-ratio: 1/1) and (min-width: 640px) {
 		.main-menu {

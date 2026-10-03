@@ -66,13 +66,50 @@
 	let gridEl = $state<HTMLDivElement>();
 	let moreAbove = $state(false);
 	let moreBelow = $state(false);
+	// Height taken off the bottom of the grid so its edge cuts through a card (see peekTrim)
+	let trim = $state(0);
+
+	// How much of the cut-off card stays visible when the grid overflows
+	const PEEK_MIN = 0.3;
+	const PEEK_MAX = 0.6;
+
+	/*
+	 * When there are more cards than fit, the grid's bottom edge has to cut through a
+	 * card row, so players can see there's more to scroll to. If the edge lands between rows (or
+	 * shows only a sliver the fade would hide), shorten the grid until the last visible
+	 * row shows 30–60% of its height. Uses only the space the layout already gives the grid,
+	 * so nothing around it moves.
+	 */
+	function peekTrim(grid: HTMLDivElement, available: number): number {
+		const card = grid.firstElementChild as HTMLElement | null;
+		if (!card || grid.scrollHeight <= available + 1) return 0;
+		const style = getComputedStyle(grid);
+		const row = card.offsetHeight;
+		const period = row + (parseFloat(style.rowGap) || 0);
+		// How far into a row (from that row's top) the bottom edge falls
+		const rows = available - (parseFloat(style.paddingTop) || 0);
+		const into = rows % period;
+		if (into >= row * PEEK_MIN && into <= row * PEEK_MAX) return 0;
+		const cut = into > row * PEEK_MAX
+			// Too much of the row is showing, or the edge sits in the gap: cut this row back
+			? into - row * PEEK_MAX
+			// Only a sliver of the next row: cut the row above back instead
+			: into + period - row * PEEK_MAX;
+		// Never into the first row — with room for only one, show it whole
+		return rows - cut < row ? 0 : cut;
+	}
 
 	function updateOverflow() {
 		if (!gridEl) return;
-		const { scrollTop, scrollHeight, clientHeight } = gridEl;
+		// The trim is a bottom margin that shrinks the grid 1:1, so add it back to get the room the layout gives it
+		const available = gridEl.clientHeight + trim;
+		const next = Math.round(peekTrim(gridEl, available));
+		if (next !== trim) trim = next;
+		const { scrollTop, scrollHeight } = gridEl;
+		const visible = available - next;
 		// A few px of slack (padding, sub-pixel rounding) isn't a hidden row
 		moreAbove = scrollTop > 4;
-		moreBelow = scrollTop + clientHeight < scrollHeight - 4;
+		moreBelow = scrollTop + visible < scrollHeight - 4;
 	}
 
 	$effect(() => {
@@ -101,7 +138,12 @@
 			const g = grid.getBoundingClientRect();
 			const c = card.getBoundingClientRect();
 			if (c.top < g.top) grid.scrollTop -= g.top - c.top + 4;
-			else if (c.bottom > g.bottom) grid.scrollTop += c.bottom - g.bottom + 4;
+			else if (c.bottom > g.bottom) {
+				// Bring the card in along with a peek of the row below it, as far as the card's own top allows
+				const gap = parseFloat(getComputedStyle(grid).rowGap) || 0;
+				const withPeek = c.bottom + gap + c.height * PEEK_MIN * 1.5 - g.bottom;
+				grid.scrollTop += Math.min(withPeek, c.top - g.top - 4);
+			}
 			updateOverflow();
 		});
 	});
@@ -122,6 +164,7 @@
 	class="combo-grid size-{prefs.comboSize}"
 	class:more-above={moreAbove}
 	class:more-below={moreBelow}
+	style:margin-bottom="{trim}px"
 	bind:this={gridEl}
 	onscroll={updateOverflow}
 >
@@ -139,9 +182,17 @@
 </div>
 
 <style>
+	/*
+	 * Every game layout gives the turn panel a fixed height: the wrapper takes the room
+	 * between the dice and the action bar, and the grid shrinks to it and scrolls
+	 */
 	.combo-wrapper {
 		position: relative;
 		width: 100%;
+		flex: 0 1 auto;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
 	}
 
 	/*
@@ -160,8 +211,10 @@
 		padding: var(--space-xs);
 		margin-inline: calc(-1 * var(--space-xs));
 		width: calc(100% + 2 * var(--space-xs));
+		flex: 0 1 auto;
+		min-height: 0;
+		align-content: start;
 		overflow-y: auto;
-		max-height: 140px;
 		--fade-top: 0px;
 		--fade-bottom: 0px;
 		mask-image: linear-gradient(
@@ -179,9 +232,12 @@
 	.size-large { --combo-col: 104px; }
 	.size-extra_large { --combo-col: 128px; }
 
-	/* Fade whichever edge has more cards beyond it, so a cut-off row reads as scrollable */
-	.combo-grid.more-above { --fade-top: 20px; }
-	.combo-grid.more-below { --fade-bottom: 20px; }
+	/*
+	 * Fade whichever edge has more cards beyond it, so a cut-off row reads as scrollable.
+	 * Short enough that the peeking row (30–60% of a card) still shows its chips.
+	 */
+	.combo-grid.more-above { --fade-top: 16px; }
+	.combo-grid.more-below { --fade-bottom: 16px; }
 
 	.invalid-toast {
 		position: absolute;
@@ -200,37 +256,16 @@
 		white-space: nowrap;
 	}
 
-	@media (min-width: 768px) {
-		.combo-grid {
-			max-height: 300px;
-		}
-	}
-
 	/*
-	 * Stacked layouts (phones and tablets in portrait): the turn panel has a fixed height.
-	 * The wrapper takes the room between the dice and the action bar, so the action bar
-	 * stays in the same place every turn; the grid shrinks to that room and scrolls.
+	 * Stacked layouts (phones and tablets in portrait): the wrapper fills its room even
+	 * when the grid doesn't, so the action bar stays in the same place every turn
 	 */
 	@media (max-width: 1023px) and (min-height: 501px) {
-		.combo-wrapper {
-			flex: 1 1 auto;
-			min-height: 0;
-			display: flex;
-			flex-direction: column;
-		}
-		.combo-grid {
-			flex: 0 1 auto;
-			min-height: 0;
-			max-height: none;
-			align-content: start;
-		}
+		.combo-wrapper { flex: 1 1 auto; }
 	}
 
-	/* Landscape on phones — cap height so it doesn't swallow the scorecard side */
+	/* Landscape on phones: tighter gaps for the narrow turn column */
 	@media (orientation: landscape) and (max-height: 500px) {
-		.combo-grid {
-			max-height: 120px;
-			gap: var(--space-xs);
-		}
+		.combo-grid { gap: var(--space-xs); }
 	}
 </style>

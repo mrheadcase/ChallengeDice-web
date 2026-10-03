@@ -99,6 +99,25 @@
 		})
 	);
 
+	/*
+	 * One lane's height, for scaling the lanes' type and pips down on short screens. Measured
+	 * rather than derived in CSS: the rows are sized by the space, not their content, so
+	 * this never feeds back into their height.
+	 */
+	let lanesEl = $state<HTMLDivElement>();
+	let rowHeight = $state<number | null>(null);
+
+	$effect(() => {
+		if (!lanesEl || compact) return;
+		const el = lanesEl;
+		const ro = new ResizeObserver(() => {
+			const lane = el.querySelector<HTMLElement>('.lane');
+			if (lane) rowHeight = lane.getBoundingClientRect().height;
+		});
+		ro.observe(el);
+		return () => ro.disconnect();
+	});
+
 	let fifthMarked = $derived(
 		RIGHT_SCORECARD_ROWS.reduce((sum, v) => sum + Math.min(scorecard.rightMarks[v] ?? 0, RIGHT_SCORECARD_BOXES_PER_ROW), 0)
 	);
@@ -135,7 +154,7 @@
 	{/if}
 
 	{#if part !== 'summary'}
-	<div class="lanes">
+	<div class="lanes" bind:this={lanesEl} style:--row-h={rowHeight === null ? null : `${rowHeight}px`}>
 		<div class="lane-grid lane-header" aria-hidden="true">
 			<span></span>
 			<span class="header-penalty">−10 each</span>
@@ -339,13 +358,32 @@
 	.positive { color: var(--score-positive); }
 	.negative { color: var(--score-negative); }
 
-	/* Lanes — 11 rows share the height left over; they never shrink below --row-min */
+	/* Lanes — 11 rows share the height left over; in the compact sheet they never shrink below --row-min */
 	.lanes {
 		flex: 1;
 		min-height: 0;
 		display: grid;
 		grid-template-rows: auto repeat(11, minmax(var(--row-min), 1fr));
 		row-gap: var(--row-gap);
+	}
+
+	/*
+	 * On the game board the sheet always fits its space and never scrolls: the lanes take
+	 * exactly the height left over (size containment, so their content can't push the card
+	 * taller), rows have no minimum, and the type and pips scale down with the row height
+	 * on screens too short for the full sizes. --row-h is one lane's height (measured above).
+	 */
+	.scorecard:not(.compact) .lanes {
+		--row-h: 100px;
+		contain: size;
+		grid-template-rows: auto repeat(11, minmax(0, 1fr));
+	}
+	.scorecard:not(.compact) .lane .cell { font-size: min(var(--cell-font), calc(var(--row-h) * 0.72)); }
+	.scorecard:not(.compact) .lane .row-label,
+	.scorecard:not(.compact) .lane .row-score { font-size: min(var(--label-font), calc(var(--row-h) * 0.85)); }
+	.scorecard:not(.compact) .lane .pip {
+		width: min(var(--pip), calc(var(--row-h) * 0.7));
+		height: min(var(--pip), calc(var(--row-h) * 0.7));
 	}
 
 	.lane-header {
@@ -384,6 +422,8 @@
 		place-items: center;
 		font-size: var(--label-font);
 		font-weight: 700;
+		/* So a lane's content never props it above --row-min */
+		line-height: 1;
 	}
 
 	.near-scoring .row-label { color: var(--sc-near); }
@@ -470,6 +510,7 @@
 		justify-content: center;
 		font-size: var(--label-font);
 		font-weight: 700;
+		line-height: 1;
 	}
 
 	.row-score.preview { color: var(--role); }
@@ -566,10 +607,12 @@
 		box-shadow: inset 0 0 0 1.5px var(--combo-fifth);
 	}
 
-	/* Short portrait phones: a little tighter so the sheet keeps its row height */
-	@media (max-width: 767px) and (orientation: portrait) and (max-height: 740px) {
+	/*
+	 * Shorter portrait phones (incl. Chrome on iOS, whose toolbars stay visible): a little
+	 * tighter so the whole sheet, 5th-die row included, fits without scrolling
+	 */
+	@media (max-width: 767px) and (orientation: portrait) and (max-height: 820px) {
 		.scorecard {
-			--row-min: 20px;
 			--row-gap: 2px;
 			--pip: 10px;
 			--label-w: 20px;
@@ -579,6 +622,14 @@
 			gap: 6px;
 			padding: var(--space-sm) 10px;
 		}
+	}
+
+	/*
+	 * Very short portrait phones (e.g. iPhone SE): the totals row gives its height to the
+	 * lanes so they stay legible; each player's total is still on their tab above the board
+	 */
+	@media (max-width: 767px) and (orientation: portrait) and (max-height: 600px) {
+		.scorecard:not(.compact) .totals { display: none; }
 	}
 
 	/*
@@ -612,13 +663,21 @@
 	.scorecard.part-summary:not(.compact) .meter-box { height: 14px; border-radius: 3px; }
 	.part-summary .fifth-title { font-size: var(--font-size-sm); }
 
+	/* Short desktop-width screens (GameLayout.svelte): the meters in one row of six, boxes under each die */
+	@media (min-width: 1024px) and (min-height: 501px) and (max-height: 860px) {
+		.part-summary { gap: 12px; }
+		.part-summary .fifth-meters { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+		.part-summary .meter { flex-direction: column; gap: 6px; padding: var(--space-sm) 6px; }
+		.part-summary .meter-boxes { gap: 2px; }
+		.scorecard.part-summary:not(.compact) .meter-box { height: 10px; }
+	}
+
 	/*
 	 * Landscape phones: too short for a 5th-die row under the lanes, so the meters become
 	 * a column on the right and the lanes get the full height
 	 */
 	@media (orientation: landscape) and (max-height: 500px) {
 		.scorecard:not(.compact) {
-			--row-min: 18px;
 			--row-gap: 2px;
 			--pip: 10px;
 			--label-w: 20px;
@@ -627,9 +686,9 @@
 			--value-font: calc(18px * var(--sc-k));
 			display: grid;
 			grid-template-columns: minmax(0, 1fr) 124px;
+			/* The lanes' row takes the rest of the card's height and their rows shrink to fit it */
 			grid-template-rows: auto minmax(0, 1fr);
 			gap: 6px 12px;
-			height: 100%;
 			padding: var(--space-sm) 10px;
 		}
 		.scorecard:not(.compact) .fifth { grid-column: 2; grid-row: 1 / 3; }
@@ -645,7 +704,6 @@
 			--pts-w: 56px;
 			--col-gap: 14px;
 			--row-gap: 4px;
-			--row-min: 30px;
 			--cell-gap: 3px;
 			--cell-font: calc(17px * var(--sc-k));
 			--label-font: calc(19px * var(--sc-k));
