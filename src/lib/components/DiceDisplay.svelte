@@ -29,6 +29,8 @@
 	// The order the 3D dice are thrown in and land in, each shuffled every roll so neither
 	// always runs left to right
 	let throwOrder = $state([0, 1, 2, 3, 4]);
+	// Where the roll comes from, below the row: 0 straight up, ± from the lower left / right
+	let throwAngle = $state(0);
 	let landOrder = $state([0, 1, 2, 3, 4]);
 	let landed = 0;
 
@@ -162,6 +164,7 @@
 		if (rolling && !prevRolling) {
 			// Before the dice see the roll start, so their throw uses this roll's order
 			throwOrder = shuffledSlots();
+			throwAngle = (Math.random() * 2 - 1) * 55;
 			landOrder = shuffledSlots();
 			landed = 0;
 			// Immediately hide dice offscreen
@@ -237,7 +240,7 @@
 			style:transform="translateX({getTranslateX(i)}px)"
 		>
 			{#if use3d}
-				<Dice3D value={diceValues[i] ?? 1} size={diceSize} {rolling} throwSlot={throwOrder[i]} landSlot={landOrder[i]} onlanded={dieLanded} />
+				<Dice3D value={diceValues[i] ?? 1} size={diceSize} {rolling} throwSlot={throwOrder[i]} {throwAngle} landSlot={landOrder[i]} onlanded={dieLanded} />
 			{:else}
 				<DiceView value={displayValue(i)} size={diceSize} rotationDegrees={rotation(i)} />
 			{/if}
@@ -251,6 +254,9 @@
 <style>
 	/* Bottom padding always reserves the caption line so selecting a combo doesn't shift the layout */
 	.dice-row {
+		/* Above the combinations, which the dice fly over on their way in */
+		position: relative;
+		z-index: 2;
 		display: flex;
 		gap: var(--space-sm);
 		justify-content: center;

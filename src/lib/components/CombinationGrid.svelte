@@ -243,11 +243,13 @@
 		);
 	}
 
-	/* Stand-in cards while the dice roll: the cards' size and outline, gently pulsing */
+	/*
+	 * Stand-in cards while the dice roll: the cards' size, gently pulsing. A translucent tint
+	 * of the muted text colour, so they show on the page and on the desktop panel, in either theme.
+	 */
 	.placeholder {
-		border: 2px dashed color-mix(in srgb, var(--warm-tan) 70%, transparent);
 		border-radius: var(--radius-md);
-		background: color-mix(in srgb, var(--card-bg) 60%, transparent);
+		background: color-mix(in srgb, var(--text-muted) 22%, transparent);
 		animation: placeholder-pulse 1.1s ease-in-out infinite;
 	}
 

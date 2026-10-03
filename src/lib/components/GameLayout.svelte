@@ -143,7 +143,10 @@
 		padding: var(--space-md);
 	}
 
+	/* Raised above the board's other panels, which the dice can fly over on their way in */
 	.turn-panel {
+		position: relative;
+		z-index: 1;
 		display: flex;
 		flex-direction: column;
 		gap: var(--turn-gap);
@@ -240,7 +243,6 @@
 		.turn-panel {
 			grid-column: 1;
 			grid-row: 1;
-			overflow: hidden auto;
 			gap: var(--space-lg);
 			padding: var(--space-lg);
 			background: var(--card-bg);

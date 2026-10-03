@@ -1,8 +1,9 @@
 <script lang="ts">
 	/*
 	 * A die as a CSS 3D cube (DiceDisplay uses it unless motion is reduced). While rolling it's
-	 * thrown in from the left and tumbles with real faces; once rolling ends it turns onto
-	 * the face for `value`, a little more spin and a last hop easing it to rest. The value
+	 * tossed in from the player's side of the board, on a slight curve, and comes down a little
+	 * off its spot, tumbling with real faces; once rolling ends it turns onto the face for
+	 * `value` and slides into place, a little more spin and a last hop easing it to rest. The value
 	 * isn't needed until then: online games only learn it when the roll comes back.
 	 *
 	 * Animated with requestAnimationFrame writing transforms straight to the elements, so a
@@ -16,13 +17,18 @@
 		rolling: boolean;
 		/** Turn to be thrown in, 0–4 (shuffled each roll), for staggering the throw */
 		throwSlot: number;
+		/**
+		 * Direction the roll comes from, in degrees: 0 is straight up from below the row,
+		 * negative from the lower left, positive from the lower right. Shared by the five dice.
+		 */
+		throwAngle: number;
 		/** Turn to land in, 0–4 (shuffled each roll), for staggering the landing */
 		landSlot: number;
 		/** Called when the die comes to rest after a roll */
 		onlanded?: () => void;
 	}
 
-	let { value, size, rolling, throwSlot, landSlot, onlanded }: Props = $props();
+	let { value, size, rolling, throwSlot, throwAngle, landSlot, onlanded }: Props = $props();
 
 	// Where each face sits on the cube: a real die, opposite faces adding up to 7
 	const FACES: { value: number; transform: string }[] = [
@@ -47,13 +53,14 @@
 	const THROW_MS = 650;
 	const SETTLE_MS = 560;
 	const STAGGER_MS = 70;
+	const THROW_STAGGER_MS = 45;
 
 	let moverEl = $state<HTMLDivElement>();
 	let cubeEl = $state<HTMLDivElement>();
 	let shadowEl = $state<HTMLDivElement>();
 
-	// Current pose: rotation in degrees, x offset and height above the board in px
-	const pose = { rx: 0, ry: 0, rz: 0, x: 0, h: 0 };
+	// Current pose: rotation in degrees, offset from the die's spot and height above the board in px
+	const pose = { rx: 0, ry: 0, rz: 0, x: 0, y: 0, h: 0 };
 	let frame = 0;
 
 	function render() {
@@ -61,10 +68,10 @@
 		// Seen from above, higher off the board reads as nearer: a little larger (never moved up,
 		// which the turn panel would clip), with a softer, smaller shadow. Lift is 0–1 at any die size.
 		const lift = Math.min(pose.h / (46 * (size / 68)), 1);
-		moverEl.style.transform = `translate3d(${pose.x}px, 0, 0) scale(${1 + lift * 0.14})`;
+		moverEl.style.transform = `translate3d(${pose.x}px, ${pose.y}px, 0) scale(${1 + lift * 0.14})`;
 		cubeEl.style.transform =
 			`translateZ(${-size / 2}px) rotateZ(${pose.rz}deg) rotateX(${pose.rx}deg) rotateY(${pose.ry}deg)`;
-		shadowEl.style.transform = `translateX(${pose.x}px) scale(${1 - lift * 0.35})`;
+		shadowEl.style.transform = `translate(${pose.x}px, ${pose.y}px) scale(${1 - lift * 0.35})`;
 		shadowEl.style.opacity = String(0.5 - lift * 0.3);
 	}
 
@@ -79,7 +86,7 @@
 	function rest(v: number) {
 		cancelAnimationFrame(frame);
 		const [rx, ry] = FACE_UP[v] ?? FACE_UP[1];
-		Object.assign(pose, { rx, ry, rz: 0, x: 0, h: 0 });
+		Object.assign(pose, { rx, ry, rz: 0, x: 0, y: 0, h: 0 });
 		render();
 		setResting(true);
 	}
@@ -97,9 +104,16 @@
 		spin = { x: sign() * rand(620, 900), y: sign() * rand(520, 820), z: sign() * rand(90, 260) };
 		// Throw distance and bounce height scale with the die, so small phone dice stay in their row
 		const k = size / 68;
-		// Later throws start further out, so each die still flies in from beyond the one before it
-		const startX = -(160 + throwSlot * 26) * k;
-		const delay = throwSlot * STAGGER_MS;
+		// Each die leaves the hand a little differently: its own angle, distance and curve
+		const a = ((throwAngle + rand(-14, 14)) * Math.PI) / 180;
+		const dist = rand(190, 270) * k;
+		const from = { x: Math.sin(a) * dist, y: Math.cos(a) * dist };
+		// Sideways bow, perpendicular to the throw, fading out as the die arrives
+		const curve = rand(-50, 50) * k;
+		const bow = { x: Math.cos(a) * curve, y: -Math.sin(a) * curve };
+		// Comes down a little off its spot, then slides home as it settles
+		const scatter = { x: rand(-0.32, 0.32) * size, y: rand(-0.22, 0.22) * size };
+		const delay = throwSlot * THROW_STAGGER_MS;
 		let start = 0;
 		let last = 0;
 
@@ -113,11 +127,15 @@
 			pose.rz += spin.z * dt;
 			if (t < THROW_MS) {
 				const p = t / THROW_MS;
-				pose.x = startX * (1 - easeOut(p));
+				const e = easeOut(p);
+				const arc = Math.sin(Math.PI * p);
+				pose.x = from.x + (scatter.x - from.x) * e + bow.x * arc;
+				pose.y = from.y + (scatter.y - from.y) * e + bow.y * arc;
 				// Thrown in high, then two shrinking bounces
 				pose.h = 46 * k * Math.exp(-3.2 * p) * Math.abs(Math.cos(p * Math.PI * 2.5));
 			} else {
-				pose.x = 0;
+				pose.x = scatter.x;
+				pose.y = scatter.y;
 				// Rattling on the board until the result is in
 				pose.h = 3 * k * Math.abs(Math.sin((t - THROW_MS) / 70));
 			}
@@ -156,6 +174,7 @@
 			pose.ry = from.ry + (to.ry - from.ry) * e;
 			pose.rz = from.rz + (to.rz - from.rz) * e;
 			pose.x = from.x * (1 - e);
+			pose.y = from.y * (1 - e);
 			// One last small hop, then down
 			pose.h = from.h * (1 - e) + (p < 0.55 ? 10 * (size / 68) * Math.sin((p / 0.55) * Math.PI) : 0);
 			render();
