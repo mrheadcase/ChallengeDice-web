@@ -85,6 +85,7 @@
 
 	function rest(v: number) {
 		cancelAnimationFrame(frame);
+		tumbling = false;
 		const [rx, ry] = FACE_UP[v] ?? FACE_UP[1];
 		Object.assign(pose, { rx, ry, rz: 0, x: 0, y: 0, h: 0 });
 		render();
@@ -97,10 +98,20 @@
 
 	// Spin rates in deg/s for the current roll
 	let spin = { x: 0, y: 0, z: 0 };
+	// Set when the roll ends: when this die's own landing starts, and the value it lands on
+	let landing: { at: number; value: number } | null = null;
+	let tumbling = false;
 
+	/*
+	 * One animation loop for the whole roll: thrown in, rattling until the result is in, then
+	 * — at this die's turn in the landing order — straight into its landing. It keeps
+	 * tumbling while it waits its turn, so no die ever pauses before it lands.
+	 */
 	function tumble() {
 		cancelAnimationFrame(frame);
 		setResting(false);
+		landing = null;
+		tumbling = true;
 		spin = { x: sign() * rand(620, 900), y: sign() * rand(520, 820), z: sign() * rand(90, 260) };
 		// Throw distance and bounce height scale with the die, so small phone dice stay in their row
 		const k = size / 68;
@@ -119,6 +130,17 @@
 
 		const step = (now: number) => {
 			if (!start) start = last = now;
+			if (landing && now >= landing.at) {
+				// Spin on to the exact moment the landing starts, then straight into it, drawing
+				// its first frame now so the motion never skips or stutters
+				const lead = (landing.at - last) / 1000;
+				pose.rx += spin.x * lead;
+				pose.ry += spin.y * lead;
+				pose.rz += spin.z * lead;
+				tumbling = false;
+				land(landing.value, landing.at, now);
+				return;
+			}
 			const dt = (now - last) / 1000;
 			last = now;
 			const t = Math.max(0, now - start - delay);
@@ -152,27 +174,43 @@
 		return base + n * period;
 	}
 
-	function settle(v: number) {
-		cancelAnimationFrame(frame);
+	/*
+	 * Where one rotation axis stops. The landing eases each axis on a curve that starts at the
+	 * die's own spin rate and comes smoothly to rest (cubic Hermite), so the spin never speeds
+	 * up or snags as the landing takes over. The stop is the first angle showing the right
+	 * face that's far enough ahead for that curve not to overshoot: at least rate × time / 3.
+	 */
+	function axisLanding(from: number, base: number, rate: number, min: number, period = 360) {
+		const dir = Math.sign(rate) || 1;
+		const sweep = Math.abs(rate) * (SETTLE_MS / 1000);
+		const to = ahead(from, base, dir, Math.max(min, sweep / 3), period);
+		return { from, d: to - from, m0: dir * sweep, to };
+	}
+
+	/** Position on an axis's landing curve, u from 0 to 1 */
+	function axisAt(a: { from: number; d: number; m0: number }, u: number): number {
+		const u2 = u * u;
+		const u3 = u2 * u;
+		return a.from + (u3 - 2 * u2 + u) * a.m0 + (-2 * u3 + 3 * u2) * a.d;
+	}
+
+	/** Lands on `v`, the landing timed from `begin`; given `now`, draws its first frame immediately */
+	function land(v: number, begin: number, now?: number) {
 		const [bx, by] = FACE_UP[v] ?? FACE_UP[1];
 		const from = { ...pose };
-		const to = {
-			rx: ahead(from.rx, bx, Math.sign(spin.x) || 1, 160),
-			ry: ahead(from.ry, by, Math.sign(spin.y) || 1, 160),
-			// Lands square to the board, at whichever quarter turn is next
-			rz: ahead(from.rz, 0, Math.sign(spin.z) || 1, 30, 90),
-		};
-		const delay = landSlot * STAGGER_MS;
-		let start = 0;
+		const ax = axisLanding(from.rx, bx, spin.x, 60);
+		const ay = axisLanding(from.ry, by, spin.y, 60);
+		// Lands square to the board, at a quarter turn
+		const az = axisLanding(from.rz, 0, spin.z, 15, 90);
 
 		const step = (now: number) => {
-			if (!start) start = now;
-			const t = Math.max(0, now - start - delay);
+			// Not started yet when landing straight from rest (no roll animation to finish)
+			const t = Math.max(0, now - begin);
 			const p = Math.min(t / SETTLE_MS, 1);
+			pose.rx = axisAt(ax, p);
+			pose.ry = axisAt(ay, p);
+			pose.rz = axisAt(az, p);
 			const e = easeOut(p);
-			pose.rx = from.rx + (to.rx - from.rx) * e;
-			pose.ry = from.ry + (to.ry - from.ry) * e;
-			pose.rz = from.rz + (to.rz - from.rz) * e;
 			pose.x = from.x * (1 - e);
 			pose.y = from.y * (1 - e);
 			// One last small hop, then down
@@ -183,13 +221,24 @@
 				// Keep the angles small so they don't grow roll after roll
 				pose.rx = bx;
 				pose.ry = by;
-				pose.rz = ((to.rz % 360) + 360) % 360;
+				pose.rz = ((az.to % 360) + 360) % 360;
 				render();
 				setResting(true);
 				onlanded?.();
 			}
 		};
-		frame = requestAnimationFrame(step);
+		if (now !== undefined) step(now);
+		else frame = requestAnimationFrame(step);
+	}
+
+	// The roll is over: land at this die's turn in the (shuffled) landing order
+	function settle(v: number) {
+		const at = performance.now() + landSlot * STAGGER_MS;
+		if (tumbling) landing = { at, value: v };
+		else {
+			cancelAnimationFrame(frame);
+			land(v, at);
+		}
 	}
 
 	// Rolling drives the animation; the value is only read when the die lands
