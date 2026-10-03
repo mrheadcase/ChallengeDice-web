@@ -125,30 +125,28 @@
 
 <div class="scorecard part-{part} text-{preferences.current.scorecardTextSize}" class:compact>
 	{#if part !== 'lanes'}
-	<!-- Totals — on the lanes' column grid: penalties over the pips, scored over the cells, total over pts -->
-	<div class="lane-grid totals" role="group" aria-label="Score">
-		<div class="stat stat-penalties">
+	<!-- Totals — three evenly spaced columns -->
+	<div class="totals" role="group" aria-label="Score">
+		<div class="stat">
 			<span class="stat-label">Penalties</span>
 			<span class="stat-value" class:negative={scoreResult.negativeTotal < 0}>{formatScore(scoreResult.negativeTotal)}</span>
 		</div>
-		<div class="totals-right">
-			<div class="stat">
-				<span class="stat-label">Scored</span>
-				<span class="stat-value" class:positive={scoreResult.positiveTotal > 0}>
-					{scoreResult.positiveTotal > 0 ? `+${scoreResult.positiveTotal}` : '0'}
-				</span>
-			</div>
-			<div class="stat stat-total">
-				<span class="stat-label">Total</span>
-				<span class="total-values">
-					<span class="stat-value {signClass(scoreResult.totalScore)}">{formatScore(scoreResult.totalScore)}</span>
-					{#if projectedTotal !== null}
-						<!-- Colour carries the sign here; the hidden text says it for screen readers -->
-						<span class="projected {signClass(projectedTotal)}" aria-hidden="true">→ {Math.abs(projectedTotal)}</span>
-						<span class="sr-only">after this move: {formatScore(projectedTotal)}</span>
-					{/if}
-				</span>
-			</div>
+		<div class="stat">
+			<span class="stat-label">Scored</span>
+			<span class="stat-value" class:positive={scoreResult.positiveTotal > 0}>
+				{scoreResult.positiveTotal > 0 ? `+${scoreResult.positiveTotal}` : '0'}
+			</span>
+		</div>
+		<div class="stat stat-total">
+			<span class="stat-label">Total</span>
+			<span class="total-values">
+				<span class="stat-value {signClass(scoreResult.totalScore)}">{formatScore(scoreResult.totalScore)}</span>
+				{#if projectedTotal !== null}
+					<!-- Colour carries the sign here; the hidden text says it for screen readers -->
+					<span class="projected {signClass(projectedTotal)}" aria-hidden="true">→ {Math.abs(projectedTotal)}</span>
+					<span class="sr-only">after this move: {formatScore(projectedTotal)}</span>
+				{/if}
+			</span>
 		</div>
 	</div>
 	{/if}
@@ -288,9 +286,13 @@
 		column-gap: var(--col-gap);
 	}
 
-	/* Totals */
+	/* Totals — penalties, scored and total in three equal columns */
 	.totals {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		align-items: end;
+		justify-items: center;
+		column-gap: var(--col-gap);
 		flex: none;
 	}
 
@@ -301,19 +303,6 @@
 		align-items: center;
 		gap: 2px;
 		padding: var(--space-xs) 0;
-	}
-
-	.stat-penalties {
-		grid-column: 1 / 3;
-	}
-
-	.totals-right {
-		grid-column: 3 / 5;
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-end;
-		gap: 12px;
-		padding-left: 2px;
 	}
 
 	.stat-label {
@@ -650,15 +639,6 @@
 	 */
 	.part-summary {
 		gap: var(--space-md);
-	}
-	.part-summary .totals {
-		display: flex;
-		justify-content: space-between;
-		gap: var(--space-md);
-	}
-	.part-summary .totals-right {
-		flex: 1;
-		padding-left: 0;
 	}
 	.part-summary .fifth-meters {
 		grid-template-columns: repeat(3, minmax(0, 1fr));
