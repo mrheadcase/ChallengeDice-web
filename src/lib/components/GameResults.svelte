@@ -3,12 +3,14 @@
 	 * Game-over screen shared by local and online play: confetti, the winner card, the
 	 * final standings side by side (tap a player to view their scorecard), and the page's
 	 * own actions (rematch, new game, leave…) underneath. The standings sit in one row so
-	 * the whole scorecard fits below them on a phone.
+	 * the whole scorecard fits below them on a phone. On desktop the results take a column
+	 * on the left and the full-size scorecard fills the rest of the screen, as on the board.
 	 */
 	import type { Snippet } from 'svelte';
 	import { onMount } from 'svelte';
 	import type { Player } from '$lib/game/models';
 	import { calculateScore } from '$lib/game/logic';
+	import { isWideBoard } from '$lib/utils/boardLayout';
 	import Scorecard from './Scorecard.svelte';
 	import ConfettiOverlay from './ConfettiOverlay.svelte';
 
@@ -29,6 +31,7 @@
 	);
 	let winner = $derived(allScores[0]);
 	let viewingPlayer = $derived(players.find(p => p.id === viewingPlayerId));
+	let wide = $derived(isWideBoard());
 
 	onMount(() => {
 		const timer = setTimeout(() => { showConfetti = false; }, 4000);
@@ -76,8 +79,14 @@
 	</div>
 
 	{#if viewingPlayer}
+		{#if wide}
+			<div class="viewer-label" data-player={viewingPlayer.color}>
+				<span class="player-dot"></span>
+				{viewingPlayer.name}'s scorecard
+			</div>
+		{/if}
 		<div class="scorecard-viewer">
-			<Scorecard scorecard={viewingPlayer.scorecard} compact />
+			<Scorecard scorecard={viewingPlayer.scorecard} compact={!wide} />
 		</div>
 	{/if}
 
@@ -228,5 +237,92 @@
 		width: 100%;
 		max-width: 500px;
 		padding-top: var(--space-xs);
+	}
+
+	/*
+	 * Desktop: a results column on the left (heading, winner, standings as a list, actions
+	 * pinned to the bottom) and the full-size scorecard filling the rest, the same widths as
+	 * the game board (GameLayout.svelte). Nothing scrolls; the sheet's lanes fit the height.
+	 */
+	@media (min-width: 1024px) and (min-height: 501px) {
+		.gameover-page {
+			display: grid;
+			grid-template-columns: 460px minmax(0, 1fr);
+			grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+			align-items: start;
+			gap: var(--space-md) var(--space-lg);
+			width: 100%;
+			max-width: 1440px;
+			margin-inline: auto;
+			padding: var(--space-lg) var(--space-xl);
+			overflow: hidden;
+		}
+
+		h2, .winner-card, .scores-list, .actions { grid-column: 1; }
+		h2 { grid-row: 1; font-size: 2.5rem; line-height: 1.2; }
+
+		.winner-card {
+			grid-row: 2;
+			width: 100%;
+			padding: var(--space-lg) var(--space-xl);
+		}
+		.winner-crown { font-size: var(--font-size-base); }
+		.winner-name { font-size: var(--font-size-2xl); }
+		.winner-score { font-size: 4rem; line-height: 1.1; }
+		.winner-details { font-size: var(--font-size-lg); gap: var(--space-lg); }
+
+		/* Standings: one full-width row per player */
+		.scores-list {
+			grid-row: 3;
+			max-width: none;
+			grid-template-columns: 1fr;
+			gap: var(--space-sm);
+		}
+		.score-row {
+			flex-direction: row;
+			gap: 12px;
+			padding: 12px var(--space-md);
+			box-shadow: var(--shadow-card);
+		}
+		.score-row:hover:not(.active) { border-color: color-mix(in srgb, var(--gold-amber) 40%, transparent); }
+		.row-top { display: contents; font-size: var(--font-size-base); }
+		.rank { width: 2ch; }
+		.name { order: 1; font-size: var(--font-size-lg); }
+		.row-top .badge { order: 2; font-size: var(--font-size-xs); padding: 1px 6px; }
+		.total { order: 3; margin-left: auto; font-size: var(--font-size-xl); }
+
+		.actions {
+			grid-row: 5;
+			max-width: none;
+		}
+
+		.viewer-label {
+			grid-column: 2;
+			grid-row: 1;
+			align-self: end;
+			display: flex;
+			align-items: center;
+			gap: var(--space-sm);
+			font-size: var(--font-size-lg);
+			font-weight: 700;
+			color: var(--player);
+		}
+
+		.scorecard-viewer {
+			grid-column: 2;
+			grid-row: 2 / -1;
+			align-self: stretch;
+			max-width: none;
+			min-height: 0;
+		}
+	}
+
+	/* Short desktop-width screens (e.g. iPad in landscape): tighter, so the standings still fit */
+	@media (min-width: 1024px) and (min-height: 501px) and (max-height: 860px) {
+		.gameover-page { gap: var(--space-sm) var(--space-lg); padding-block: var(--space-md); }
+		h2 { font-size: var(--font-size-2xl); }
+		.winner-card { display: block; padding: var(--space-md) var(--space-xl); border-width: 3px; }
+		.winner-score { font-size: 3rem; }
+		.score-row { padding: var(--space-sm) var(--space-md); }
 	}
 </style>

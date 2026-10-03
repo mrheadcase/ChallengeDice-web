@@ -707,11 +707,11 @@
 	}
 
 	/*
-	 * Tablets in portrait (from the iPad mini's 744px up): the 5th-die row spans the full
-	 * width, so its dice, boxes and header grow to match instead of staying phone-sized.
-	 * The lanes above have height to spare for it.
+	 * Tablets in portrait (from the iPad mini's 744px up) and the desktop game over screen:
+	 * the 5th-die row spans the full width, so its dice, boxes and header grow to match
+	 * instead of staying phone-sized. The lanes above have height to spare for it.
 	 */
-	@media (min-width: 600px) and (max-width: 1023px) and (min-height: 501px) {
+	@media (min-width: 600px) and (min-height: 501px) {
 		.part-full:not(.compact) .fifth { gap: var(--space-sm); }
 		.part-full:not(.compact) .fifth-title { font-size: var(--font-size-sm); }
 		.part-full:not(.compact) .fifth-count { font-size: var(--font-size-base); }
