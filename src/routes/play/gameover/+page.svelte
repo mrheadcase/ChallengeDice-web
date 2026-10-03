@@ -16,14 +16,31 @@
 
 <GameResults players={gameState.players}>
 	{#snippet actions()}
-		<button class="btn btn-primary btn-block" onclick={() => { localGame.rematch(); goto(`${base}/play/game`); }}>
-			Rematch
-		</button>
-		<button class="btn btn-outline btn-block" onclick={() => goto(`${base}/play/setup`)}>
-			New Game
-		</button>
-		<button class="btn btn-quiet btn-block" onclick={() => { localGame.resetGame(); goto(base || '/'); }}>
-			Main Menu
-		</button>
+		<!-- One row, so the whole scorecard above stays on screen on a phone -->
+		<div class="action-row">
+			<button class="btn btn-primary btn-block" onclick={() => { localGame.rematch(); goto(`${base}/play/game`); }}>
+				Rematch
+			</button>
+			<button class="btn btn-outline btn-block" onclick={() => goto(`${base}/play/setup`)}>
+				New Game
+			</button>
+			<button class="btn btn-quiet btn-block" onclick={() => { localGame.resetGame(); goto(base || '/'); }}>
+				Main Menu
+			</button>
+		</div>
 	{/snippet}
 </GameResults>
+
+<style>
+	.action-row {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--space-sm);
+		width: 100%;
+	}
+
+	.action-row .btn {
+		padding-inline: var(--space-sm);
+		white-space: nowrap;
+	}
+</style>

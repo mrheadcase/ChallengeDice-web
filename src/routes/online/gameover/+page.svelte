@@ -121,7 +121,7 @@
 </GameResults>
 
 <style>
-	.rematch-section { width: 100%; text-align: center; }
+	.rematch-section { width: 100%; max-width: 320px; text-align: center; }
 	.rematch-info { color: var(--text-medium); margin-bottom: var(--space-sm); font-weight: 600; }
 	.countdown-info {
 		color: var(--gold-amber); font-weight: 700; font-size: var(--font-size-sm);
