@@ -575,32 +575,24 @@
 		background: var(--sc-well);
 	}
 
-	/* One more mark fills it — red, so it reads differently from the orange combo preview below */
-	.meter.almost-full {
-		box-shadow: inset 0 0 0 1.5px var(--score-negative);
-		background: color-mix(in srgb, var(--score-negative) 8%, var(--sc-well));
-	}
-	.meter.previewing { box-shadow: inset 0 0 0 1.5px var(--combo-fifth); }
-	.meter.full { opacity: 0.5; }
-
 	/*
-	 * Light theme: the deep orange and the red are too close in hue to tell apart as thin
-	 * rings, so they differ in style too — the preview is dashed (like the previewed pips),
-	 * the warning a heavier solid red with a stronger tint
+	 * One more mark fills it: a solid red ring with a red tint. The combo preview is a dashed
+	 * orange outline (like the previewed pips), so the two differ in style as well as colour —
+	 * on the light theme the deep orange and the red are too close in hue to rely on colour.
 	 */
-	:global(:root:not(.theme-dark)) .meter.almost-full {
+	.meter.almost-full {
 		box-shadow: inset 0 0 0 2px var(--score-negative);
 		background: color-mix(in srgb, var(--score-negative) 12%, var(--sc-well));
 	}
-	:global(:root:not(.theme-dark)) .meter.previewing {
-		box-shadow: none;
+	.meter.previewing {
 		outline: 2px dashed var(--combo-fifth);
 		outline-offset: -2px;
 	}
-	/* Previewing the move that fills a nearly full row: keep the red ring inside the dashes */
-	:global(:root:not(.theme-dark)) .meter.previewing.almost-full {
+	/* Previewing the move that fills a nearly full row: the red ring shows inside the dashes */
+	.meter.previewing.almost-full {
 		box-shadow: inset 0 0 0 4px var(--score-negative);
 	}
+	.meter.full { opacity: 0.5; }
 
 	.meter-boxes {
 		display: flex;
